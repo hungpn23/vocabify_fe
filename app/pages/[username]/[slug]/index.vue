@@ -4,42 +4,9 @@ import type {
   FormErrorEvent,
   FormSubmitEvent,
 } from '@nuxt/ui';
-import * as v from 'valibot';
 import { CardStatus } from '~/utils/enums';
 import { formatDistanceToNowStrict } from 'date-fns';
-
-// --- Type Definitions / Schema ---
-
-const schema = v.object({
-  name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
-  description: v.string(),
-  cards: v.pipe(
-    v.array(
-      v.object({
-        id: v.pipe(
-          v.string(),
-          v.transform((val) => val as UUID),
-        ),
-        term: v.pipe(v.string(), v.minLength(1, 'Term is required')),
-        definition: v.pipe(
-          v.string(),
-          v.minLength(1, 'Definition is required'),
-        ),
-        status: v.enum(CardStatus),
-        nextReviewDate: v.optional(
-          v.pipe(
-            v.string(),
-            v.minLength(1, 'Next review date is required'),
-            v.transform((val) => new Date(val).toISOString()),
-          ),
-        ),
-      }),
-    ),
-    v.minLength(4, 'At least 4 cards are required'),
-  ),
-});
-
-type Schema = v.InferOutput<typeof schema>;
+import { DeckWithCardsSchema } from '~~/shared/types/deck';
 
 // --- Form State ---
 
@@ -48,11 +15,7 @@ const isEditing = ref(false);
 const isSaving = ref(false);
 const form = useTemplateRef('form');
 
-const state = reactive<Schema>({
-  name: '',
-  description: '',
-  cards: [],
-});
+const deckState = reactive<Partial<DeckWithCards>>({});
 
 // --- Learning State ---
 const isFlipped = ref(false);
@@ -129,7 +92,7 @@ const { token, data: user } = useAuth();
 const {
   data: res,
   error,
-  status,
+  status: fetchStatus,
   refresh: refreshDeckData,
 } = await useLazyFetch<DeckWithCards, ErrorResponse>(
   `/api/decks/${deckId.value}`,
@@ -156,11 +119,28 @@ watch(res, (newRes) => {
     );
     learnState.totalCards = learnState.flashcards.length;
     flashcard.value = learnState.flashcards.shift();
+
+    toast.add({
+      title: 'Flashcard data initialized successfully.',
+      color: 'success',
+      duration: 2000,
+    });
   }
 });
 
 watch(flashcard, () => {
   isFlipped.value = false;
+});
+
+watch(fetchStatus, (newStatus) => {
+  if (newStatus === 'error') {
+    toast.add({
+      title: 'Error fetching decks',
+      description: JSON.stringify(error.value?.data || 'Unknown error'),
+      color: 'error',
+      duration: 2000,
+    });
+  }
 });
 
 watchDebounced(learnState, saveAnswers, {
@@ -169,24 +149,7 @@ watchDebounced(learnState, saveAnswers, {
   deep: true,
 });
 
-// watchDebounced(
-//   learnState,
-//   async () => {
-//     await refreshDeckData();
-//   },
-//   {
-//     debounce: 10000,
-//     deep: true,
-//   },
-// );
-
-if (status.value === 'error') {
-  toast.add({
-    title: 'Error fetching decks',
-    description: JSON.stringify(error.value?.data || 'Unknown error'),
-    color: 'error',
-    duration: 3000,
-  });
+if (fetchStatus.value === 'error') {
 }
 
 // --- Form Functions ---
@@ -200,40 +163,68 @@ function cancelEditing() {
   resetFormState(res.value);
   form.value?.clear();
   formErrorMsg.value = '';
+
+  toast.add({
+    title: 'Editing canceled successfully.',
+    color: 'success',
+    duration: 2000,
+  });
 }
 
 function resetFormState(newRes?: DeckWithCards) {
   if (newRes) {
-    state.name = newRes.name;
-    state.description = newRes.description || '';
-    state.cards = structuredClone(newRes.cards);
+    deckState.name = newRes.name;
+    deckState.description = newRes.description || '';
+    deckState.cards = structuredClone(newRes.cards);
   }
 }
 
 function addCardFirst() {
-  state.cards.unshift({
+  deckState.cards?.unshift({
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
+    correctCount: 0,
+    nextReviewDate: undefined,
     status: CardStatus.NEW,
+  });
+
+  toast.add({
+    title: 'Added first successfully.',
+    color: 'success',
+    duration: 2000,
   });
 }
 
 function addCardLast() {
-  state.cards.push({
+  deckState.cards?.push({
     id: `temp ${crypto.randomUUID()}` as UUID,
     term: '',
     definition: '',
+    correctCount: 0,
+    nextReviewDate: undefined,
     status: CardStatus.NEW,
+  });
+
+  toast.add({
+    title: 'Added last successfully.',
+    color: 'success',
+    duration: 2000,
   });
 }
 
 function deleteCard(cardId?: UUID) {
-  state.cards = state.cards.filter((c) => c.id !== cardId);
+  deckState.cards = deckState.cards?.filter((c) => c.id !== cardId);
 }
 
 function goToHome() {
   router.push(`/home`);
+
+  toast.add({
+    title: 'Go to successfully.',
+    color: 'success',
+    duration: 2000,
+  });
 }
 
 async function onDeckDelete() {
@@ -249,12 +240,12 @@ async function onDeckDelete() {
         title: 'Error deleting deck',
         description: JSON.stringify(error.data || 'Unknown error'),
         color: 'error',
-        duration: 3000,
+        duration: 2000,
       });
     });
 }
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+async function onSubmit(event: FormSubmitEvent<DeckWithCards>) {
   if (isSaving.value) return;
   isSaving.value = true;
 
@@ -272,7 +263,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       toast.add({
         title: 'Changes saved successfully.',
         color: 'success',
-        duration: 3000,
+        duration: 2000,
       });
     })
     .catch((error: ErrorResponse) => {
@@ -280,7 +271,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         title: 'Error saving changes',
         description: JSON.stringify(error.data || 'Unknown error'),
         color: 'error',
-        duration: 3000,
+        duration: 2000,
       });
 
       return;
@@ -355,13 +346,19 @@ async function refreshDeckProgress() {
   })
     .then(async () => {
       await refreshDeckData();
+
+      toast.add({
+        title: 'refreshDeckProgress successfully.',
+        color: 'success',
+        duration: 2000,
+      });
     })
     .catch((error: ErrorResponse) => {
       toast.add({
         title: 'Error refreshing deck!',
         description: JSON.stringify(error.data || 'Unknown error'),
         color: 'error',
-        duration: 3000,
+        duration: 2000,
       });
     });
 }
@@ -377,8 +374,28 @@ async function saveAnswers() {
     body: { answers: learnState.answers },
   })
     .then(() => {
-      console.log('Answers saved successfully', learnState.answers.length);
+      const map = new Map(learnState.answers.map((a) => [a.id, a]));
+
+      if (deckState.cards?.length) {
+        for (const c of deckState.cards) {
+          const answer = map.get(c.id);
+
+          if (answer) {
+            Object.assign(c, {
+              ...answer,
+              status: calcCardStatus(answer.nextReviewDate),
+            });
+          }
+        }
+      }
+
       learnState.answers = [];
+
+      toast.add({
+        title: 'Auto saveAnswers successfully.',
+        color: 'success',
+        duration: 2000,
+      });
     })
     .catch((error: ErrorResponse) => {
       console.error('Failed to save answers:', error.data);
@@ -405,13 +422,15 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonDeckDetailPage v-if="status === 'pending' || status === 'idle'" />
+  <SkeletonDeckDetailPage
+    v-if="fetchStatus === 'pending' || fetchStatus === 'idle'"
+  />
 
   <UPage v-else>
     <UContainer>
       <UForm
-        :schema="schema"
-        :state="state"
+        :schema="DeckWithCardsSchema"
+        :state="deckState"
         ref="form"
         @submit="onSubmit"
         @error="onError"
@@ -442,31 +461,12 @@ defineShortcuts({
               <UCard
                 :ui="{
                   body: 'grow flex place-items-center text-left text-2xl font-semibold px-6 sm:px-12 sm:text-3xl',
-                  footer:
-                    'w-full bg-secondary/25 flex place-content-center place-items-center gap-2 p-2 sm:px-4',
                 }"
                 variant="soft"
                 class="bg-elevated flex min-h-[50dvh] w-full flex-col place-items-center divide-none text-center"
                 @click="throttledToggleFlip"
               >
                 {{ !isFlipped ? flashcard?.term : flashcard?.definition }}
-
-                <template #footer v-if="!shortcutPressed">
-                  <span
-                    class="hidden place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold sm:inline-flex"
-                  >
-                    <UIcon class="size-5" name="i-lucide-keyboard" />
-                    <span>Shortcut</span>
-                  </span>
-
-                  Press
-                  <span
-                    class="bg-elevated mx-1 inline-flex rounded-sm border-b-3 border-b-current/90 px-1 font-medium"
-                  >
-                    Space
-                  </span>
-                  or click on the card to flip
-                </template>
               </UCard>
 
               <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
@@ -500,18 +500,16 @@ defineShortcuts({
                     size="lg"
                     variant="subtle"
                     color="error"
-                    class="cursor-pointer"
+                    class="cursor-pointer transition-transform duration-200 ease-in-out active:scale-90"
                     @click="throttledHandleAnswer(false)"
                   />
-
-                  or
 
                   <UButton
                     label="Next"
                     icon="i-heroicons-check"
                     size="lg"
                     variant="subtle"
-                    class="cursor-pointer"
+                    class="cursor-pointer transition-transform active:scale-95"
                     @click="throttledHandleAnswer(true)"
                   />
                 </div>
@@ -533,6 +531,20 @@ defineShortcuts({
                     />
                   </UDropdownMenu>
                 </div>
+              </div>
+
+              <div
+                v-if="!shortcutPressed"
+                class="flex w-full place-content-center place-items-center gap-2 rounded-md p-2 text-current sm:px-4"
+              >
+                <span
+                  class="hidden place-content-center place-items-center gap-2 rounded-md border border-current px-2 py-0.5 font-bold sm:inline-flex"
+                >
+                  <UIcon class="size-5" name="i-lucide-keyboard" />
+                  <span>Shortcuts</span>
+                </span>
+
+                Press <Kbd label="Space" /> or click on the card to flip
               </div>
             </div>
 
@@ -575,7 +587,7 @@ defineShortcuts({
           <template #title>
             <UFormField name="name">
               <UInput
-                v-model="state.name"
+                v-model="deckState.name"
                 :disabled="!isEditing"
                 :ui="{
                   base: `${!isEditing ? 'p-0' : ''} text-highlighted text-2xl font-bold text-pretty sm:text-3xl disabled:opacity-100 disabled:cursor-default`,
@@ -591,7 +603,7 @@ defineShortcuts({
               name="description"
             >
               <UTextarea
-                v-model="state.description"
+                v-model="deckState.description"
                 :rows="1"
                 :maxrows="10"
                 :disabled="!isEditing"
@@ -612,7 +624,7 @@ defineShortcuts({
               <h2 class="text-2xl font-bold text-pretty sm:text-3xl">
                 Terms
                 <span class="text-lg font-semibold sm:text-xl"
-                  >({{ state.cards.length }})</span
+                  >({{ deckState.cards?.length || 0 }})</span
                 >
               </h2>
 
@@ -661,7 +673,7 @@ defineShortcuts({
 
             <TransitionGroup name="list" appear>
               <UCard
-                v-for="(c, index) in state.cards"
+                v-for="(c, index) in deckState.cards"
                 :key="c.id"
                 variant="subtle"
               >

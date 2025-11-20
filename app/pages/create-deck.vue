@@ -43,17 +43,12 @@ const importSchema = v.object({
 type Schema = v.InferOutput<typeof schema>;
 type ImportSchema = v.InferOutput<typeof importSchema>;
 
-const payload = reactive<Schema>({
+const createState = reactive<Schema>({
   name: '',
   description: '',
   visibility: Visibility.PUBLIC,
   passcode: undefined,
-  cards: [
-    { term: '', definition: '' },
-    { term: '', definition: '' },
-    { term: '', definition: '' },
-    { term: '', definition: '' },
-  ],
+  cards: [],
 });
 
 const importState = reactive({
@@ -104,11 +99,19 @@ const parsedCards = computed(() => {
 });
 
 watch(
-  () => payload.visibility,
+  () => createState.visibility,
   (newVisibility) => {
-    payload.passcode = newVisibility === Visibility.PROTECTED ? '' : undefined;
+    createState.passcode =
+      newVisibility === Visibility.PROTECTED ? '' : undefined;
   },
 );
+
+onMounted(() => {
+  createState.cards.push({ term: '', definition: '' });
+  createState.cards.push({ term: '', definition: '' });
+  createState.cards.push({ term: '', definition: '' });
+  createState.cards.push({ term: '', definition: '' });
+});
 
 async function onCreate(event: FormSubmitEvent<Schema>) {
   formErrorMsg.value = '';
@@ -128,7 +131,7 @@ async function onCreate(event: FormSubmitEvent<Schema>) {
       toast.add({
         title: 'New deck created!',
         color: 'success',
-        duration: 3000,
+        duration: 2000,
       });
     })
     .catch((error: ErrorResponse) => {
@@ -136,7 +139,7 @@ async function onCreate(event: FormSubmitEvent<Schema>) {
         title: 'Create failed!',
         description: JSON.stringify(error.data || 'Unknown error'),
         color: 'error',
-        duration: 3000,
+        duration: 2000,
       });
     })
     .finally(() => {
@@ -160,7 +163,7 @@ async function onImportSubmit(event: FormSubmitEvent<ImportSchema>) {
       title: 'Error importing cards',
       description: 'Invalid custom content or card separator',
       color: 'error',
-      duration: 3000,
+      duration: 2000,
     });
 
     return;
@@ -175,18 +178,18 @@ async function onImportSubmit(event: FormSubmitEvent<ImportSchema>) {
       return { term, definition };
     });
 
-  const currentCards = payload.cards.filter(
+  const currentCards = createState.cards.filter(
     (c) => c.term.trim().length > 0 || c.definition.trim().length > 0,
   );
 
-  payload.cards = [...currentCards, ...importCards];
+  createState.cards = [...currentCards, ...importCards];
 
   isImportModalOpen.value = false;
 
   toast.add({
     title: 'Successfully imported!',
     color: 'success',
-    duration: 3000,
+    duration: 2000,
   });
 }
 
@@ -234,7 +237,7 @@ async function onError(event: FormErrorEvent) {
       <UPageBody>
         <UForm
           :schema="schema"
-          :state="payload"
+          :state="createState"
           id="create-deck-form"
           class="flex flex-col gap-4"
           @submit="onCreate"
@@ -248,8 +251,8 @@ async function onError(event: FormErrorEvent) {
             title="Manage your deck access"
           >
             <UButton
-              :label="payload.visibility"
-              :icon="getVisibilityIcon(payload.visibility)"
+              :label="createState.visibility"
+              :icon="getVisibilityIcon(createState.visibility)"
               class="cursor-pointer"
               color="neutral"
               variant="subtle"
@@ -258,28 +261,28 @@ async function onError(event: FormErrorEvent) {
 
             <template #body>
               <UFormField
-                :help="getVisibilityDesc(payload.visibility)"
+                :help="getVisibilityDesc(createState.visibility)"
                 label="Visibility"
                 name="visibility"
               >
                 <USelect
-                  v-model="payload.visibility"
+                  v-model="createState.visibility"
                   :items="Object.values(Visibility)"
-                  :icon="getVisibilityIcon(payload.visibility)"
+                  :icon="getVisibilityIcon(createState.visibility)"
                   :ui="{ content: 'min-w-fit' }"
                   variant="subtle"
                 />
               </UFormField>
 
               <UFormField
-                v-if="payload.visibility === Visibility.PROTECTED"
+                v-if="createState.visibility === Visibility.PROTECTED"
                 class="mt-2"
                 label="Passcode"
                 name="passcode"
                 required
               >
                 <UInput
-                  v-model="payload.passcode"
+                  v-model="createState.passcode"
                   placeholder="Enter your passcode..."
                 />
               </UFormField>
@@ -288,7 +291,7 @@ async function onError(event: FormErrorEvent) {
 
           <UFormField label="Name" name="name" required>
             <UInput
-              v-model="payload.name"
+              v-model="createState.name"
               :ui="{ base: 'sm:text-lg' }"
               class="w-full"
               variant="subtle"
@@ -298,7 +301,7 @@ async function onError(event: FormErrorEvent) {
 
           <UFormField label="Description" name="description">
             <UTextarea
-              v-model="payload.description"
+              v-model="createState.description"
               :rows="1"
               :maxrows="5"
               :ui="{
@@ -313,7 +316,7 @@ async function onError(event: FormErrorEvent) {
 
           <div class="flex place-items-center gap-4">
             <h2 class="text-xl font-bold text-pretty sm:text-2xl">
-              Cards ({{ payload.cards.length }})
+              Cards ({{ createState.cards.length }})
             </h2>
 
             <UModal
@@ -510,9 +513,18 @@ async function onError(event: FormErrorEvent) {
             </UModal>
           </div>
 
+          <UButton
+            class="cursor-pointer place-self-center px-4 text-lg"
+            label="Insert"
+            icon="i-lucide-plus"
+            variant="subtle"
+            size="xl"
+            @click="createState.cards.unshift({ term: '', definition: '' })"
+          />
+
           <TransitionGroup name="list">
             <UCard
-              v-for="(c, index) in payload.cards"
+              v-for="(c, index) in createState.cards"
               :key="index"
               variant="subtle"
             >
@@ -526,7 +538,7 @@ async function onError(event: FormErrorEvent) {
                   icon="i-lucide-trash-2"
                   color="error"
                   variant="ghost"
-                  @click="payload.cards.splice(index, 1)"
+                  @click="createState.cards.splice(index, 1)"
                 />
               </div>
 
@@ -566,12 +578,12 @@ async function onError(event: FormErrorEvent) {
           </TransitionGroup>
 
           <UButton
-            class="cursor-pointer place-self-center px-4"
-            label="Add a card"
+            class="cursor-pointer place-self-center px-4 text-lg"
+            label="Insert"
             icon="i-lucide-plus"
             variant="subtle"
             size="xl"
-            @click="payload.cards.push({ term: '', definition: '' })"
+            @click="createState.cards.push({ term: '', definition: '' })"
           />
         </UForm>
       </UPageBody>

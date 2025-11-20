@@ -1,9 +1,4 @@
-import { addDays } from "date-fns";
-
-type CalcResult = {
-  correctCount: number;
-  nextReviewDate: string;
-};
+import { addDays } from 'date-fns';
 
 export default (options: {
   correctCount: number;
