@@ -6,6 +6,11 @@ type Options = {
   reviewDate?: string;
 };
 
+export type CalcResult = {
+  streak: number;
+  reviewDate: string;
+};
+
 export default (opts: Options): CalcResult => {
   const { streak, correct, reviewDate } = opts;
   const now = new Date();

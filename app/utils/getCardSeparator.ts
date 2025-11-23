@@ -1,12 +1,10 @@
-import { CardSeparator } from './enums/separator';
-
 export default (value: CardSeparator, custom: string = '') => {
   switch (value) {
-    case CardSeparator.NEW_LINE:
+    case 'new_line':
       return '\n';
-    case CardSeparator.SEMICOLON:
+    case 'semicolon':
       return ';';
-    case CardSeparator.CUSTOM:
+    case 'custom':
       return custom;
     default:
       return null;

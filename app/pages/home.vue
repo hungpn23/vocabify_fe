@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { DeckOrderBy, QueryOrder } from '~/utils/enums';
+import { QueryOrder } from '~/utils/enums';
 import { formatTimeAgo } from '@vueuse/core';
 import type { PageCardProps, SelectMenuItem } from '@nuxt/ui';
 
@@ -90,28 +90,28 @@ watch(debouncedSearch, (newSearch) => {
 });
 
 const query = computed(() => {
-  let orderBy: DeckOrderBy = DeckOrderBy.OPENED_AT;
+  let orderBy: DeckOrderBy = 'openedAt';
   let order: QueryOrder = QueryOrder.DESC_NULLS_LAST;
 
   switch (filter.value) {
     case 'recently':
-      orderBy = DeckOrderBy.OPENED_AT;
+      orderBy = 'openedAt';
       order = QueryOrder.DESC_NULLS_LAST;
       break;
     case 'newest':
-      orderBy = DeckOrderBy.CREATED_AT;
+      orderBy = 'createdAt';
       order = QueryOrder.DESC_NULLS_LAST;
       break;
     case 'oldest':
-      orderBy = DeckOrderBy.CREATED_AT;
+      orderBy = 'createdAt';
       order = QueryOrder.ASC_NULLS_LAST;
       break;
     case 'name_az':
-      orderBy = DeckOrderBy.NAME;
+      orderBy = 'name';
       order = QueryOrder.ASC_NULLS_LAST;
       break;
     case 'name_za':
-      orderBy = DeckOrderBy.NAME;
+      orderBy = 'name';
       order = QueryOrder.DESC_NULLS_LAST;
       break;
   }

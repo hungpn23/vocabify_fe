@@ -3,13 +3,17 @@ const { token, data: user } = useAuth();
 const route = useRoute();
 
 const progress = ref(33);
+const questions = ref<Question[]>();
 const cards = ref<Card[]>([]);
+
 const deckId = computed(() => route.query.deckId as string);
+
 const deckSlug = computed(() => {
   const slug = route.params.slug;
 
   return Array.isArray(slug) ? slug[0] : slug;
 });
+
 const username = computed(() => {
   const n = route.params.username;
 
@@ -25,24 +29,22 @@ const {
   server: false,
 });
 
-watch(deck, () => (cards.value = getCards(false)), {
-  immediate: true,
+watch(deck, (newDeck) => {
+  cards.value = getCards(newDeck?.cards || [], false);
+
+  questions.value = generateQuestions(
+    cards.value,
+    ['multiple_choices'],
+    'both',
+  );
+
+  console.log('🔥🔥🔥 questions.value', questions.value);
 });
-
-function getCards(ignoreDate: boolean) {
-  if (!deck.value) return [];
-
-  return ignoreDate
-    ? deck.value.cards
-    : deck.value.cards.filter(
-        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-      );
-}
 
 async function onIgnoreDate() {
   await refreshData();
 
-  cards.value = getCards(true);
+  cards.value = getCards(deck.value?.cards || [], true);
 }
 
 // Options for the current flashcard (mock data for now)

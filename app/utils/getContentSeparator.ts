@@ -1,12 +1,10 @@
-import { ContentSeparator } from './enums/separator';
-
 export default (value: ContentSeparator, custom: string = '') => {
   switch (value) {
-    case ContentSeparator.COMMA:
+    case 'comma':
       return ',';
-    case ContentSeparator.TAB:
+    case 'tab':
       return '\t';
-    case ContentSeparator.CUSTOM:
+    case 'custom':
       return custom;
     default:
       return null;

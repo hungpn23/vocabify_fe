@@ -24,16 +24,3 @@ export enum QueryOrder {
   desc_nulls_last = 'desc nulls last',
   desc_nulls_first = 'desc nulls first',
 }
-
-export enum DeckOrderBy {
-  CREATED_AT = 'createdAt',
-  UPDATED_AT = 'updatedAt',
-  OPENED_AT = 'openedAt',
-  NAME = 'name',
-}
-
-export enum CardStatus {
-  KNOWN = 'known',
-  LEARNING = 'learning',
-  NEW = 'new',
-}

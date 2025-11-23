@@ -1,4 +1,4 @@
-import { Visibility, type DeckOrderBy } from '~/utils/enums';
+import { Visibility } from '~/utils/enums';
 import type { UUID } from './branded';
 import type { PaginationQuery } from './pagination';
 import { CardSchema, type Card } from './card';
@@ -13,6 +13,8 @@ export const DeckWithCardsSchema = v.object({
   ),
 });
 
+export type DeckWithCards = v.InferOutput<typeof DeckWithCardsSchema>;
+
 export type Deck = {
   id: UUID;
   name: string;
@@ -22,20 +24,17 @@ export type Deck = {
   openedAt?: string;
 };
 
+export type DeckOrderBy = 'createdAt' | 'updatedAt' | 'openedAt' | 'name';
+
 export type DeckPaginationQuery = PaginationQuery & {
   orderBy?: DeckOrderBy;
 };
 
-export type DeckStats = {
-  total: number;
-  known: number;
-  learning: number;
-  unseen: number;
-};
-
-export type DeckWithCards = v.InferOutput<typeof DeckWithCardsSchema>;
-
 export type CreateDeckRes = Pick<Deck, 'id' | 'slug'>;
+
+export type ContentSeparator = 'tab' | 'comma' | 'custom';
+
+export type CardSeparator = 'new_line' | 'semicolon' | 'custom';
 
 export type DeckUrlParams = {
   page: string;

@@ -1,5 +1,3 @@
-import { CardStatus } from '~/utils/enums';
-import { QuestionType, QuestionDirection } from '~/utils/enums/question';
 import type { UUID } from './branded';
 import * as v from 'valibot';
 
@@ -18,20 +16,24 @@ export const CardSchema = v.object({
       v.transform((val) => new Date(val).toISOString()),
     ),
   ),
-  status: v.enum(CardStatus),
+  status: v.picklist(['known', 'learning', 'new'] as const),
 });
+
+export type CardStatus = 'known' | 'learning' | 'new';
 
 export type Card = v.InferOutput<typeof CardSchema>;
 
 export type CardAnswer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
-export type CalcResult = Required<Pick<Card, 'streak' | 'reviewDate'>>;
-
 export type Question = {
-  id: string;
+  id: UUID;
   type: QuestionType;
   direction: QuestionDirection;
   question: string;
   answer: string;
   choices?: string[];
 };
+
+export type QuestionType = 'multiple_choices' | 'written';
+
+export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';

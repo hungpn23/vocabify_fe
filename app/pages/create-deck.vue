@@ -1,8 +1,37 @@
 <script lang="ts" setup>
 import * as v from 'valibot';
-import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui';
+import type { FormErrorEvent, FormSubmitEvent, SelectMenuItem } from '@nuxt/ui';
 import { Visibility } from '~/utils/enums';
-import { CardSeparator, ContentSeparator } from '~/utils/enums/separator';
+
+const contentSeparatorItems = ref<SelectMenuItem[]>([
+  {
+    id: 'tab' satisfies ContentSeparator,
+    label: 'Tab',
+  },
+  {
+    id: 'comma' satisfies ContentSeparator,
+    label: 'Comma',
+  },
+  {
+    id: 'custom' satisfies ContentSeparator,
+    label: 'Custom',
+  },
+]);
+
+const cardSeparatorItems = ref<(SelectMenuItem & { id: CardSeparator })[]>([
+  {
+    id: 'new_line' satisfies CardSeparator,
+    label: 'New line',
+  },
+  {
+    id: 'semicolon' satisfies CardSeparator,
+    label: 'Semicolon',
+  },
+  {
+    id: 'custom' satisfies CardSeparator,
+    label: 'Custom',
+  },
+]);
 
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
@@ -54,8 +83,8 @@ const createState = reactive<Schema>({
 
 const importState = reactive({
   cards: '',
-  contentSeparator: ContentSeparator.TAB,
-  cardSeparator: CardSeparator.NEW_LINE,
+  contentSeparator: 'tab' as ContentSeparator,
+  cardSeparator: 'new_line' as CardSeparator,
   customContentSeparator: '-',
   customCardSeparator: '\\',
 });
@@ -380,9 +409,10 @@ async function onError(event: FormErrorEvent) {
                       >
                         <USelect
                           v-model="importState.contentSeparator"
-                          :items="Object.values(ContentSeparator)"
+                          :items="contentSeparatorItems"
                           class="w-full"
                           variant="subtle"
+                          value-key="id"
                         />
 
                         <template #label>
@@ -393,10 +423,7 @@ async function onError(event: FormErrorEvent) {
                       </UFormField>
 
                       <UFormField
-                        v-if="
-                          importState.contentSeparator ===
-                          ContentSeparator.CUSTOM
-                        "
+                        v-if="importState.contentSeparator === 'custom'"
                         name="customContentSeparator"
                       >
                         <UInput
@@ -417,7 +444,7 @@ async function onError(event: FormErrorEvent) {
                       >
                         <USelect
                           v-model="importState.cardSeparator"
-                          :items="Object.values(CardSeparator)"
+                          :items="cardSeparatorItems"
                           class="w-full"
                           variant="subtle"
                         />
@@ -430,9 +457,7 @@ async function onError(event: FormErrorEvent) {
                       </UFormField>
 
                       <UFormField
-                        v-if="
-                          importState.cardSeparator === CardSeparator.CUSTOM
-                        "
+                        v-if="importState.cardSeparator === 'custom'"
                         name="customCardSeparator"
                       >
                         <UInput

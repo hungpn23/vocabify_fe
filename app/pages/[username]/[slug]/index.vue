@@ -4,7 +4,6 @@ import type {
   FormErrorEvent,
   FormSubmitEvent,
 } from '@nuxt/ui';
-import { CardStatus } from '~/utils/enums';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { DeckWithCardsSchema } from '~~/shared/types/deck';
 
@@ -237,7 +236,7 @@ function addCardFirst() {
     definition: '',
     streak: 0,
     reviewDate: undefined,
-    status: CardStatus.NEW,
+    status: 'new',
   });
 
   toast.add({
@@ -254,7 +253,7 @@ function addCardLast() {
     definition: '',
     streak: 0,
     reviewDate: undefined,
-    status: CardStatus.NEW,
+    status: 'new',
   });
 
   toast.add({
@@ -506,9 +505,7 @@ function getCards(ignoreDate: boolean) {
 
                   <span
                     v-else-if="
-                      !isEditing &&
-                      c.reviewDate &&
-                      c.status === CardStatus.KNOWN
+                      !isEditing && c.reviewDate && c.status === 'known'
                     "
                     class="text-right text-sm text-balance"
                   >

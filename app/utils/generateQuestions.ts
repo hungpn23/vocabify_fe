@@ -1,6 +1,3 @@
-import type { Question } from '~~/shared/types/card';
-import { QuestionDirection, QuestionType } from './enums/question';
-
 export default (
   cards: Card[],
   types: QuestionType[],
@@ -13,16 +10,13 @@ export default (
     const type = types[Math.floor(random * types.length)]!;
 
     let direction: QuestionDirection;
-    if (dir === QuestionDirection.BOTH) {
-      direction =
-        random < 0.5
-          ? QuestionDirection.TERM_TO_DEF
-          : QuestionDirection.DEF_TO_TERM;
+    if (dir === 'both') {
+      direction = random < 0.5 ? 'term_to_def' : 'def_to_term';
     } else {
       direction = dir;
     }
 
-    const isTermToDef = direction === QuestionDirection.TERM_TO_DEF;
+    const isTermToDef = direction === 'term_to_def';
 
     let question: string;
     let answer: string;
@@ -35,14 +29,14 @@ export default (
     }
 
     let choices: string[] | undefined;
-    if (type === QuestionType.MULTIPLE_CHOICES) {
+    if (type === 'multiple_choices') {
       const result = [answer];
 
-      const others = cards.filter((c) => c !== c);
+      const others = cards.filter((card) => card !== c);
       const shuffledOthers = shuffle(others);
 
       for (let i = 0; i < 3; i++) {
-        const distractor = shuffledOthers[i];
+        const distractor = shuffledOthers[i]!;
 
         const distractorAnswer = isTermToDef
           ? distractor.definition
