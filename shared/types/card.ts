@@ -25,13 +25,39 @@ export type Card = v.InferOutput<typeof CardSchema>;
 
 export type CardAnswer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
+export type CardState = {
+  streak: number;
+  reviewDate?: string;
+};
+
+export type FlashcardState = {
+  totalCards: number;
+  queue: Card[];
+  answers: CardAnswer[];
+  retryQueue: Card[];
+};
+
 export type Question = {
   id: UUID;
   type: QuestionType;
   direction: QuestionDirection;
   question: string;
   answer: string;
+  state: CardState;
   choices?: string[];
+};
+
+export type QuestionState = {
+  totalQuestions: number;
+  queue: Question[];
+  retryQueue: Question[];
+  answers: CardAnswer[];
+};
+
+export type QuestionSetting = {
+  direction: QuestionDirection;
+  multipleChoices: boolean;
+  written: boolean;
 };
 
 export type QuestionType = 'multiple_choices' | 'written';

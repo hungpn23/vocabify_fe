@@ -32,7 +32,7 @@ const knownCount = ref(0);
 const skippedCount = ref(0);
 const flashcard = ref<Card | undefined>(undefined);
 
-const learnState = reactive<FlashcardState>({
+const learn = reactive<FlashcardState>({
   totalCards: 0,
   queue: [],
   answers: [],
@@ -40,8 +40,8 @@ const learnState = reactive<FlashcardState>({
 });
 
 const progress = computed(() => {
-  if (!learnState.totalCards) return 0;
-  return (knownCount.value / learnState.totalCards) * 100;
+  if (!learn.totalCards) return 0;
+  return (knownCount.value / learn.totalCards) * 100;
 });
 
 watch(
@@ -51,12 +51,12 @@ watch(
       knownCount.value = 0;
       skippedCount.value = 0;
 
-      learnState.answers = [];
-      learnState.retryQueue = [];
-      learnState.queue = newCards;
-      learnState.totalCards = learnState.queue.length;
+      learn.answers = [];
+      learn.retryQueue = [];
+      learn.queue = newCards;
+      learn.totalCards = learn.queue.length;
 
-      flashcard.value = learnState.queue.shift();
+      flashcard.value = learn.queue.shift();
     }
   },
   { immediate: true },
@@ -66,14 +66,14 @@ watch(flashcard, () => {
   isFlipped.value = false;
 });
 
-watchDebounced(learnState, saveAnswers, {
+watchDebounced(learn, saveAnswers, {
   debounce: 1000,
   maxWait: 3000,
   deep: true,
 });
 
 async function saveAnswers() {
-  const answersToSave = [...learnState.answers];
+  const answersToSave = [...learn.answers];
   if (answersToSave.length === 0) return;
 
   $fetch(`/api/study/save-answer/${props.deck?.id}`, {
@@ -83,7 +83,7 @@ async function saveAnswers() {
   })
     .then(() => {
       emit('answers-saved', answersToSave);
-      learnState.answers = [];
+      learn.answers = [];
     })
     .catch((error: ErrorResponse) => {
       console.error('Save answers fail!', error.data);
@@ -115,28 +115,28 @@ function handleAnswer(correct: boolean) {
     knownCount.value++;
   } else {
     skippedCount.value++;
-    learnState.retryQueue.push(updated);
+    learn.retryQueue.push(updated);
   }
 
   // trigger watchDebounced
-  const index = learnState.answers.findIndex((a) => a.id === updated.id);
+  const index = learn.answers.findIndex((a) => a.id === updated.id);
   if (index !== -1) {
-    learnState.answers[index] = updated;
+    learn.answers[index] = updated;
   } else {
-    learnState.answers.push(updated);
+    learn.answers.push(updated);
   }
 
-  if (!learnState.queue.length) {
-    if (!learnState.retryQueue.length) {
+  if (!learn.queue.length) {
+    if (!learn.retryQueue.length) {
       flashcard.value = undefined;
       return;
     }
 
-    learnState.queue = learnState.retryQueue;
-    learnState.retryQueue = [];
+    learn.queue = learn.retryQueue;
+    learn.retryQueue = [];
   }
 
-  flashcard.value = learnState.queue.shift();
+  flashcard.value = learn.queue.shift();
 }
 
 function playAudio(text?: string) {
@@ -189,7 +189,7 @@ defineShortcuts({
           <span class="text-error text-sm">Skipped</span>
         </div>
 
-        <div>{{ `${knownCount} / ${learnState.totalCards}` }}</div>
+        <div>{{ `${knownCount} / ${learn.totalCards}` }}</div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success text-sm">Known</span>
@@ -203,17 +203,12 @@ defineShortcuts({
         </div>
       </div>
 
-      <UProgress
-        v-model="progress"
-        :ui="{ base: 'bg-elevated/50' }"
-        class="ring-default rounded-lg shadow ring"
-      />
-
       <UCard
         :ui="{
-          body: 'p-2 sm:p-4 sm:pt-2 w-full flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
+          header: 'p-0 sm:px-0',
+          body: 'p-2 sm:p-4 sm:pt-2 w-full flex-1 flex flex-col gap-2 sm:gap-4 place-content-between place-items-center select-none',
         }"
-        class="flex min-h-[50dvh] shadow-md"
+        class="flex min-h-[50dvh] flex-col divide-none shadow-md"
         variant="subtle"
         @click="throttledToggleFlip"
       >
@@ -250,6 +245,14 @@ defineShortcuts({
         </div>
 
         <div></div>
+
+        <template #header>
+          <UProgress
+            v-model="progress"
+            :ui="{ base: 'bg-inherit' }"
+            size="sm"
+          />
+        </template>
       </UCard>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">

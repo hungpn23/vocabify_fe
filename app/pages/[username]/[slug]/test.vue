@@ -59,11 +59,11 @@ onMounted(() => {
     <div class="my-2 flex flex-col gap-2">
       <div class="flex place-content-between place-items-center gap-2">
         <UButton
-          to="/home"
+          to="#"
           class="cursor-pointer px-0 text-base"
           variant="link"
           icon="i-lucide-move-left"
-          label="Back to Learn"
+          label="Back to NOTHING"
         />
 
         <div class="flex place-content-between place-items-center">

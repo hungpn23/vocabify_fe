@@ -2,6 +2,7 @@
 const { token, data: user } = useAuth();
 const route = useRoute();
 
+const ignoreDate = ref(false);
 const cards = ref<Card[]>([]);
 
 const deckId = computed(() => route.query.deckId as string);
@@ -21,33 +22,37 @@ const username = computed(() => {
 const {
   data: deck,
   pending,
-  refresh: refreshData,
+  refresh,
 } = await useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
   headers: { Authorization: token.value || '' },
   server: false,
 });
 
 watch(deck, (newDeck) => {
-  cards.value = getCards(newDeck?.cards || [], false);
+  cards.value = getCards(newDeck?.cards || [], ignoreDate.value);
 });
 
 async function onIgnoreDate() {
-  await refreshData();
+  ignoreDate.value = true;
+  await refresh();
+}
 
-  cards.value = getCards(deck.value?.cards || [], true);
+async function onRestarted() {
+  ignoreDate.value = false;
+  await refresh();
 }
 </script>
 
 <template>
   <UContainer>
     <Flashcard
-      :username="username"
-      :cards="cards"
-      :pending="pending"
+      :username
+      :cards
+      :pending
       :title="deck?.name"
       :deck="{ id: deckId, slug: deckSlug }"
       routing
-      @restarted="refreshData"
+      @restarted="onRestarted"
       @ignore-date="onIgnoreDate"
     >
       <template #routes>

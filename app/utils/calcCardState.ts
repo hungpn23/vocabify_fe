@@ -6,7 +6,7 @@ type Options = {
   reviewDate?: string;
 };
 
-export type CalcResult = {
+type CalcResult = {
   streak: number;
   reviewDate: string;
 };

@@ -5,7 +5,7 @@ export default (
 ): Question[] => {
   const questions: Question[] = [];
 
-  for (const { id, ...c } of cards) {
+  for (const card of cards) {
     const random = Math.random();
     const type = types[Math.floor(random * types.length)]!;
 
@@ -21,18 +21,18 @@ export default (
     let question: string;
     let answer: string;
     if (isTermToDef) {
-      question = c.term;
-      answer = c.definition;
+      question = card.term;
+      answer = card.definition;
     } else {
-      question = c.definition;
-      answer = c.term;
+      question = card.definition;
+      answer = card.term;
     }
 
     let choices: string[] | undefined;
     if (type === 'multiple_choices') {
       const result = [answer];
 
-      const others = cards.filter((card) => card !== c);
+      const others = cards.filter((c) => c.id !== card.id);
       const shuffledOthers = shuffle(others);
 
       for (let i = 0; i < 3; i++) {
@@ -48,7 +48,18 @@ export default (
       choices = shuffle(result);
     }
 
-    questions.push({ id, type, direction, question, answer, choices });
+    questions.push({
+      id: card.id,
+      type,
+      direction,
+      question,
+      answer,
+      choices,
+      state: {
+        streak: card.streak,
+        reviewDate: card.reviewDate,
+      },
+    });
   }
 
   return questions;
