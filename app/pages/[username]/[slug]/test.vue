@@ -10,7 +10,7 @@ const smAndLarger = breakpoints.greaterOrEqual('sm');
 const cardRefs = useTemplateRef('cards');
 
 const isSettingOpen = ref(false);
-const isReviewShowing = ref(false);
+const isReviewShowing = ref(true);
 const questions = ref<TestQuestion[]>([]);
 
 const setting = reactive<TestSetting>({
@@ -79,13 +79,7 @@ watch(deck, (newDeck) => {
   }
 });
 
-async function onSettingClosed() {
-  if (JSON.stringify(setting) === snapshotSetting) return;
-
-  snapshotSetting = '';
-  await refresh();
-  scrollAndFocus();
-}
+watch(() => session.index, scrollAndFocus);
 
 function scrollAndFocus() {
   if (session.element) {
@@ -114,7 +108,16 @@ function handleChangeQuestion(dir: 'left' | 'right') {
   } else if (dir === 'right' && session.index < cardRefs.value.length - 1) {
     session.index++;
   }
+}
 
+async function onSettingClosed() {
+  if (JSON.stringify(setting) === snapshotSetting) {
+    scrollAndFocus();
+    return;
+  }
+
+  snapshotSetting = '';
+  await refresh();
   scrollAndFocus();
 }
 
@@ -254,14 +257,15 @@ onMounted(() => {
         </h1>
 
         <UCard
-          v-for="(q, index) in questions"
-          :key="index"
+          v-for="(q, qIndex) in questions"
+          :key="qIndex"
           ref="cards"
           :ui="{
             header: 'p-0 sm:px-0',
             body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
           }"
-          class="bg-elevated mb-2 flex min-h-[50dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
+          class="bg-elevated mb-2 flex min-h-[50dvh] cursor-pointer flex-col divide-none shadow-md transition-all select-none sm:mb-4"
+          @click="session.index = qIndex"
         >
           <div class="flex w-full place-content-between place-items-center">
             <span class="flex place-items-center gap-1 font-semibold">
@@ -276,7 +280,7 @@ onMounted(() => {
             </span>
 
             <UBadge
-              :label="`${index + 1} of ${questions.length}`"
+              :label="`${qIndex + 1} of ${questions.length}`"
               variant="subtle"
               color="neutral"
             />
@@ -301,8 +305,8 @@ onMounted(() => {
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
               <UButton
-                v-for="(choice, index) in q.choices"
-                :key="index"
+                v-for="(choice, cIndex) in q.choices"
+                :key="cIndex"
                 variant="outline"
                 color="neutral"
                 class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all active:scale-98 disabled:pointer-events-none"
@@ -310,26 +314,35 @@ onMounted(() => {
                   'hover:text-primary hover:ring-primary/50 hover:bg-primary/10 hover:shadow':
                     !isReviewShowing,
                   'ring-success ring-2':
-                    isReviewShowing && index === q!.correctChoiceIndex,
+                    isReviewShowing && cIndex === q!.correctChoiceIndex,
                   'ring-default ring': isReviewShowing && !q.isCorrect,
                   'ring-error ring-2':
                     isReviewShowing &&
                     !q.isCorrect &&
-                    index === q.userChoiceIndex,
+                    cIndex === q.userChoiceIndex,
                 }"
                 :disabled="
                   (isReviewShowing &&
                     !q.isCorrect &&
-                    index !== q.correctChoiceIndex) ||
+                    cIndex !== q.correctChoiceIndex) ||
                   (isReviewShowing && q.isCorrect)
                 "
-                @click="console.log('clicked choice', index)"
+                @click.stop="
+                  () => {
+                    q.userChoiceIndex = cIndex;
+                    q.isCorrect = cIndex === q.correctChoiceIndex;
+                    console.log('is correct? ', q.isCorrect);
+                    session.index = qIndex;
+
+                    handleChangeQuestion('right');
+                  }
+                "
               >
                 <UBadge
                   class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit transition-all sm:flex"
                   variant="outline"
                 >
-                  {{ index + 1 }}
+                  {{ cIndex + 1 }}
                 </UBadge>
 
                 <span class="text-start text-base font-medium sm:text-lg">
@@ -353,6 +366,7 @@ onMounted(() => {
                     console.log('user answer: ', q.userAnswer);
                   }
                 "
+                @click.stop="session.index = qIndex"
               />
 
               <UInput
