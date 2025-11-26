@@ -1,37 +1,24 @@
 <script setup lang="ts">
+import type { UCard } from '#components';
 import { breakpointsTailwind } from '@vueuse/core';
 import type { TestSetting } from '~~/shared/types/card';
-
-const directionItems = [
-  {
-    label: 'Term to Definition',
-    value: 'term_to_def' satisfies QuestionDirection,
-  },
-  {
-    label: 'Definition to Term',
-    value: 'def_to_term' satisfies QuestionDirection,
-  },
-  {
-    label: 'Both',
-    value: 'both' satisfies QuestionDirection,
-  },
-];
 
 const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
+const cardRefs = useTemplateRef('cards');
 
-const isReviewShowing = ref(false);
+const currentInput = ref<HTMLInputElement | null>(null);
+const currentCardIndex = ref(0);
+
 const isSettingOpen = ref(false);
+const isReviewShowing = ref(false);
 const questions = ref<TestQuestion[]>([]);
-
-const inputComponent = useTemplateRef('input');
 
 const setting = reactive<TestSetting>({
   questionAmount: 0,
-  multipleChoices: true,
-  written: true,
+  types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
 });
 
@@ -49,15 +36,6 @@ const username = computed(() => {
   return Array.isArray(n) ? n[0] : n;
 });
 
-const questionTypes = computed(() => {
-  const types: QuestionType[] = [];
-
-  if (setting.multipleChoices) types.push('multiple_choices');
-  if (setting.written) types.push('written');
-
-  return types;
-});
-
 const {
   data: deck,
   pending,
@@ -69,14 +47,15 @@ const {
 
 watch(deck, (newDeck) => {
   if (newDeck && newDeck.cards.length > 0) {
+    currentInput.value = null;
+    currentCardIndex.value = 0;
     isReviewShowing.value = false;
-    isSettingOpen.value = false;
 
     if (!setting.questionAmount) setting.questionAmount = newDeck.cards.length;
 
     questions.value = generateQuestions<TestQuestion>({
       cards: shuffle(newDeck.cards).slice(0, setting.questionAmount),
-      types: questionTypes.value,
+      types: setting.types,
       dir: setting.direction,
       answerPool: newDeck.cards.map((c) => ({
         id: c.id,
@@ -87,11 +66,71 @@ watch(deck, (newDeck) => {
   }
 });
 
+async function onSettingApply() {
+  isSettingOpen.value = false;
+
+  await refresh();
+
+  if (cardRefs.value) {
+    scrollAndFocus(cardRefs.value[0]?.$el);
+  }
+}
+
+function scrollAndFocus(el?: Element) {
+  if (el) {
+    el.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+
+    if (currentInput.value) currentInput.value.blur();
+
+    const newInput = el.querySelector('input');
+    if (newInput) {
+      currentInput.value = newInput;
+      setTimeout(() => newInput.focus(), 300);
+    } else {
+      currentInput.value = null;
+    }
+  }
+}
+
+function handleChangeQuestion(dir: 'left' | 'right', currentIndex: number) {
+  if (!cardRefs.value || !cardRefs.value.length) return;
+
+  let i = currentIndex;
+  if (dir === 'left' && i > 0) {
+    i--;
+
+    scrollAndFocus(cardRefs.value[i]?.$el);
+  } else if (dir === 'right' && i < cardRefs.value.length - 1) {
+    i++;
+
+    scrollAndFocus(cardRefs.value[i]?.$el);
+  }
+
+  currentCardIndex.value = i;
+}
+
 defineShortcuts({
   '1': () => console.log('triggered shortcut 0 !!!'),
   '2': () => console.log('triggered shortcut 1 !!!'),
   '3': () => console.log('triggered shortcut 2 !!!'),
   '4': () => console.log('triggered shortcut 3 !!!'),
+
+  arrowleft: {
+    handler: () => handleChangeQuestion('left', currentCardIndex.value),
+    usingInput: true,
+  },
+
+  arrowright: {
+    handler: () => handleChangeQuestion('right', currentCardIndex.value),
+    usingInput: true,
+  },
+});
+
+onMounted(() => {
+  isSettingOpen.value = true;
 });
 </script>
 
@@ -119,7 +158,7 @@ defineShortcuts({
               body: 'flex-initial pt-0 sm:pt-0',
               footer: 'place-content-end',
             }"
-            :description="deck?.name || ''"
+            description="Let's customize your test"
           >
             <UButton
               class="cursor-pointer place-self-end"
@@ -131,13 +170,13 @@ defineShortcuts({
             />
 
             <template #title>
-              <h2 class="text-2xl font-semibold sm:text-3xl">
-                Let's setup your test
-              </h2>
+              <span class="text-xl font-semibold sm:text-2xl">
+                Test settings
+              </span>
             </template>
 
             <template #body>
-              <div class="flex flex-col gap-1 text-base font-medium sm:text-lg">
+              <div class="flex flex-col gap-2 font-semibold">
                 <div
                   class="flex place-content-between place-items-center gap-2"
                 >
@@ -150,25 +189,22 @@ defineShortcuts({
                   />
                 </div>
 
-                <USeparator label="Question format" />
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Multiple choices</div>
-
-                  <USwitch v-model="setting.multipleChoices" size="lg" />
-                </div>
-
-                <div
-                  class="flex place-content-between place-items-center gap-2"
-                >
-                  <div>Written</div>
-
-                  <USwitch v-model="setting.written" size="lg" />
-                </div>
-
                 <USeparator label="Answer format" />
+
+                <div
+                  class="flex place-content-between place-items-center gap-2"
+                >
+                  <div>Question types</div>
+
+                  <USelect
+                    v-model="setting.types"
+                    :items="questionTypeItems"
+                    :ui="{ content: 'min-w-fit' }"
+                    size="lg"
+                    value-key="value"
+                    multiple
+                  />
+                </div>
 
                 <div
                   class="flex place-content-between place-items-center gap-2"
@@ -177,7 +213,7 @@ defineShortcuts({
 
                   <USelect
                     v-model="setting.direction"
-                    :items="directionItems"
+                    :items="questionDirectionItems"
                     :ui="{ content: 'min-w-fit' }"
                     size="lg"
                   />
@@ -191,7 +227,7 @@ defineShortcuts({
                 label="Apply"
                 color="neutral"
                 size="lg"
-                @click="async () => await refresh()"
+                @click="onSettingApply"
               />
             </template>
           </UModal>
@@ -211,7 +247,8 @@ defineShortcuts({
 
         <UCard
           v-for="(q, index) in questions"
-          :key="q.id"
+          :key="index"
+          ref="cards"
           :ui="{
             header: 'p-0 sm:px-0',
             body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
@@ -300,10 +337,8 @@ defineShortcuts({
                 :ui="{
                   base: `text-lg sm:text-xl transition-all`,
                 }"
-                ref="input"
                 variant="outline"
                 color="neutral"
-                autofocus
                 @keydown.enter="console.log('submitted answer', q.userAnswer)"
               />
 

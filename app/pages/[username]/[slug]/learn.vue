@@ -2,21 +2,6 @@
 import { breakpointsTailwind } from '@vueuse/core';
 import type { LearnSetting, LearnState } from '~~/shared/types/card';
 
-const directionItems = [
-  {
-    label: 'Term to Definition',
-    value: 'term_to_def' satisfies QuestionDirection,
-  },
-  {
-    label: 'Definition to Term',
-    value: 'def_to_term' satisfies QuestionDirection,
-  },
-  {
-    label: 'Both',
-    value: 'both' satisfies QuestionDirection,
-  },
-];
-
 const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
@@ -32,7 +17,7 @@ const correctCount = ref(0);
 const incorrectCount = ref(0);
 const userAnswer = ref('');
 const userChoiceIndex = ref<number>(-1);
-const question = ref<Question | undefined>(undefined);
+const question = ref<LearnQuestion | undefined>(undefined);
 
 const inputComponent = useTemplateRef('input');
 
@@ -45,9 +30,8 @@ const learn = reactive<LearnState>({
 
 const setting = reactive<LearnSetting>({
   showCorrectAnswer: true,
+  types: ['multiple_choices'],
   direction: 'term_to_def',
-  multipleChoices: true,
-  written: false,
 });
 
 const isIncorrect = computed(() => isCorrect.value === false);
@@ -69,15 +53,6 @@ const username = computed(() => {
   const n = route.params.username;
 
   return Array.isArray(n) ? n[0] : n;
-});
-
-const questionTypes = computed(() => {
-  const types: QuestionType[] = [];
-
-  if (setting.multipleChoices) types.push('multiple_choices');
-  if (setting.written) types.push('written');
-
-  return types;
 });
 
 const userInputClass = computed(() => {
@@ -114,9 +89,9 @@ watch(deck, (newDeck) => {
     learn.answers = [];
     learn.retryQueue = [];
 
-    learn.queue = generateQuestions<Question>({
+    learn.queue = generateQuestions<LearnQuestion>({
       cards: getCards(newDeck.cards, isIgnoreDate.value),
-      types: questionTypes.value,
+      types: setting.types,
       dir: setting.direction,
       answerPool: newDeck.cards.map((c) => ({
         id: c.id,
@@ -128,6 +103,14 @@ watch(deck, (newDeck) => {
     question.value = learn.queue.shift();
   }
 });
+
+watch(
+  setting,
+  (newSetting) => {
+    if (!newSetting.types.length) setting.types = ['multiple_choices'];
+  },
+  { deep: true },
+);
 
 watchDebounced(learn, saveAnswers, {
   debounce: 1000,
@@ -162,7 +145,7 @@ function submitAnswer(userAnswer: number | string) {
   }
 }
 
-function handleAnswer(correct?: boolean, question?: Question) {
+function handleAnswer(correct?: boolean, question?: LearnQuestion) {
   if (!question || correct === undefined) return;
 
   isAnswerSaving.value = true;
@@ -498,6 +481,7 @@ defineShortcuts({
           <div class="flex place-items-center place-self-end">
             <KeyboardShortcuts />
 
+            <!-- Learn Settings -->
             <UModal
               v-model:open="isSettingOpen"
               :fullscreen="!smAndLarger"
@@ -506,7 +490,7 @@ defineShortcuts({
                 body: 'flex-initial pt-0 sm:pt-0',
                 footer: 'place-content-end',
               }"
-              :description="deck?.name || ''"
+              description="Let's customize your learning session"
             >
               <UButton
                 class="cursor-pointer place-self-end"
@@ -518,13 +502,13 @@ defineShortcuts({
               />
 
               <template #title>
-                <h2 class="text-2xl font-semibold sm:text-3xl">Settings</h2>
+                <h2 class="text-xl font-semibold sm:text-2xl">
+                  Learn settings
+                </h2>
               </template>
 
               <template #body>
-                <div
-                  class="flex flex-col gap-1 text-base font-medium sm:text-lg"
-                >
+                <div class="flex flex-col gap-2 font-semibold">
                   <div
                     class="flex place-content-between place-items-center gap-2"
                   >
@@ -538,20 +522,17 @@ defineShortcuts({
                   <div
                     class="flex place-content-between place-items-center gap-2"
                   >
-                    <div>Multiple choices</div>
+                    <div>Question types</div>
 
-                    <USwitch v-model="setting.multipleChoices" size="lg" />
+                    <USelect
+                      v-model="setting.types"
+                      :items="questionTypeItems"
+                      :ui="{ content: 'min-w-fit' }"
+                      size="lg"
+                      value-key="value"
+                      multiple
+                    />
                   </div>
-
-                  <div
-                    class="flex place-content-between place-items-center gap-2"
-                  >
-                    <div>Written</div>
-
-                    <USwitch v-model="setting.written" size="lg" />
-                  </div>
-
-                  <USeparator label="Answer format" />
 
                   <div
                     class="flex place-content-between place-items-center gap-2"
@@ -560,7 +541,7 @@ defineShortcuts({
 
                     <USelect
                       v-model="setting.direction"
-                      :items="directionItems"
+                      :items="questionDirectionItems"
                       :ui="{ content: 'min-w-fit' }"
                       size="lg"
                     />
@@ -571,7 +552,7 @@ defineShortcuts({
               <template #footer>
                 <UButton
                   class="cursor-pointer"
-                  label="Apply"
+                  label="Apply changes"
                   color="neutral"
                   size="lg"
                   @click="async () => await refresh()"

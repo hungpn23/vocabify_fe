@@ -50,8 +50,7 @@ export type LearnState = {
 
 export type LearnSetting = {
   showCorrectAnswer: boolean;
-  multipleChoices: boolean;
-  written: boolean;
+  types: QuestionType[];
   direction: QuestionDirection;
 };
 
@@ -67,7 +66,6 @@ export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> & {
 
 export type TestSetting = {
   questionAmount: number;
-  multipleChoices: boolean;
-  written: boolean;
+  types: QuestionType[];
   direction: QuestionDirection;
 };

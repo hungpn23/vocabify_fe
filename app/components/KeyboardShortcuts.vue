@@ -27,7 +27,7 @@ const isShortcutOpen = ref(false);
     />
 
     <template #title>
-      <h2 class="text-2xl font-semibold sm:text-3xl">Keyboard Shortcuts</h2>
+      <span class="text-xl font-semibold sm:text-2xl">Keyboard shortcuts</span>
     </template>
 
     <template #body>
@@ -43,17 +43,10 @@ const isShortcutOpen = ref(false);
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Skip</div>
+          <div>Skip/Next card</div>
 
           <div class="flex place-items-center">
-            <Kbd :icon="{ name: 'i-lucide-move-left' }" />
-          </div>
-        </div>
-
-        <div class="flex place-content-between place-items-center gap-2">
-          <div>Next</div>
-
-          <div class="flex place-items-center">
+            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
             <Kbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
@@ -64,9 +57,7 @@ const isShortcutOpen = ref(false);
           <div>Choose an answer</div>
 
           <div class="flex place-items-center">
-            <Kbd label="1" />
-            <Kbd label="2" />
-            <Kbd label="3" />
+            <Kbd label="1" />/ <Kbd label="2" />/ <Kbd label="3" />/
             <Kbd label="4" />
           </div>
         </div>
@@ -75,36 +66,39 @@ const isShortcutOpen = ref(false);
           <div>Get a hint</div>
 
           <div class="place-items center flex">
-            <Kbd label="Shift" />
+            <Kbd label="Shift" />+
             <Kbd label="/" />
           </div>
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Don't know</div>
+          <div>Mark as don't know</div>
 
           <div class="place-items center flex">
-            <Kbd label="Shift" />
+            <Kbd label="Shift" />+
             <Kbd label="X" />
+          </div>
+        </div>
+
+        <USeparator label="Test" />
+
+        <div class="flex place-content-between place-items-center gap-2">
+          <div>Previous/Next question</div>
+
+          <div class="flex place-items-center">
+            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <Kbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
 
         <USeparator label="Routing" />
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Move back</div>
+          <div>Go back/forward</div>
 
           <div class="place-items center flex">
-            <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-            <Kbd :icon="{ name: 'i-lucide-move-left' }" />
-          </div>
-        </div>
-
-        <div class="flex place-content-between place-items-center gap-2">
-          <div>Move forward</div>
-
-          <div class="place-items center flex">
-            <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+            <Kbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
+            <Kbd :icon="{ name: 'i-lucide-move-left' }" />/
             <Kbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
