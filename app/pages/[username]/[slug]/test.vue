@@ -10,12 +10,12 @@ const smAndLarger = breakpoints.greaterOrEqual('sm');
 const cardRefs = useTemplateRef('cards');
 
 const isSettingOpen = ref(false);
-const isReviewShowing = ref(true);
+const isSubmitted = ref(false);
 const questions = ref<TestQuestion[]>([]);
 
 const setting = reactive<TestSetting>({
   questionAmount: 0,
-  types: ['multiple_choices', 'written'],
+  types: ['multiple_choices'],
   direction: 'term_to_def',
 });
 let snapshotSetting = '';
@@ -57,8 +57,7 @@ watch(deck, (newDeck) => {
   if (newDeck && newDeck.cards.length > 0) {
     session.input = null;
     session.index = 0;
-
-    isReviewShowing.value = false;
+    isSubmitted.value = false;
 
     if (
       !setting.questionAmount ||
@@ -119,6 +118,69 @@ async function onSettingClosed() {
   snapshotSetting = '';
   await refresh();
   scrollAndFocus();
+}
+
+// --- [MỚI] Các hàm xử lý logic câu hỏi ---
+
+// 1. Xử lý khi chọn trắc nghiệm
+function onSelectChoice(q: TestQuestion, qIndex: number, cIndex: number) {
+  // Cập nhật index người dùng chọn
+  q.userChoiceIndex = cIndex;
+
+  // Tính toán đúng/sai ngay lập tức (theo logic cũ của bạn)
+  q.isCorrectChoice = cIndex === q.correctChoiceIndex;
+
+  // Cập nhật session và chuyển câu
+  session.index = qIndex;
+  handleChangeQuestion('right');
+
+  console.log(`Q${qIndex}: Correct? ${q.isCorrectChoice}`);
+}
+
+// 2. Xử lý khi nhập xong câu tự luận (Blur)
+function onWrittenAnswerBlur(q: TestQuestion) {
+  if (q.userAnswer) {
+    // Trim khoảng trắng thừa
+    q.userAnswer = q.userAnswer.trim();
+
+    // So sánh cơ bản (case-insensitive) để tính isCorrect
+    // Lưu ý: Logic so sánh thực tế có thể phức tạp hơn
+    q.isCorrectChoice = q.userAnswer.toLowerCase() === q.answer.toLowerCase();
+
+    console.log('User answer cleaned:', q.userAnswer);
+    console.log('Is correct?', q.isCorrectChoice);
+  }
+}
+
+function onSubmitTest() {
+  isSubmitted.value = true;
+}
+
+function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
+  const isSelected = q.userChoiceIndex === cIndex;
+  const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+
+  if (!isSubmitted.value) {
+    if (isSelected) {
+      return 'border-primary bg-primary/10 text-primary';
+    }
+
+    return '';
+  }
+
+  if (isSelected) {
+    if (isThisChoiceCorrect) {
+      return 'border-success bg-success/10 text-success';
+    }
+
+    return 'border-error bg-error/10 text-error';
+  } else {
+    if (isThisChoiceCorrect) {
+      return 'border-dashed border-success bg-success/10 text-success';
+    }
+
+    return 'opacity-60';
+  }
 }
 
 defineShortcuts({
@@ -262,9 +324,9 @@ onMounted(() => {
           ref="cards"
           :ui="{
             header: 'p-0 sm:px-0',
-            body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
+            body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 p-2`,
           }"
-          class="bg-elevated mb-2 flex min-h-[50dvh] cursor-pointer flex-col divide-none shadow-md transition-all select-none sm:mb-4"
+          class="bg-elevated mb-2 flex min-h-[30dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
           @click="session.index = qIndex"
         >
           <div class="flex w-full place-content-between place-items-center">
@@ -304,42 +366,15 @@ onMounted(() => {
               v-if="q.type === 'multiple_choices'"
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
-              <UButton
+              <button
                 v-for="(choice, cIndex) in q.choices"
                 :key="cIndex"
-                variant="outline"
-                color="neutral"
-                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all active:scale-98 disabled:pointer-events-none"
-                :class="{
-                  'hover:text-primary hover:ring-primary/50 hover:bg-primary/10 hover:shadow':
-                    !isReviewShowing,
-                  'ring-success ring-2':
-                    isReviewShowing && cIndex === q!.correctChoiceIndex,
-                  'ring-default ring': isReviewShowing && !q.isCorrect,
-                  'ring-error ring-2':
-                    isReviewShowing &&
-                    !q.isCorrect &&
-                    cIndex === q.userChoiceIndex,
-                }"
-                :disabled="
-                  (isReviewShowing &&
-                    !q.isCorrect &&
-                    cIndex !== q.correctChoiceIndex) ||
-                  (isReviewShowing && q.isCorrect)
-                "
-                @click.stop="
-                  () => {
-                    q.userChoiceIndex = cIndex;
-                    q.isCorrect = cIndex === q.correctChoiceIndex;
-                    console.log('is correct? ', q.isCorrect);
-                    session.index = qIndex;
-
-                    handleChangeQuestion('right');
-                  }
-                "
+                :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(q, cIndex)}`"
+                :disabled="isSubmitted"
+                @click.stop="onSelectChoice(q, qIndex, cIndex)"
               >
                 <UBadge
-                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit transition-all sm:flex"
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
                   variant="outline"
                 >
                   {{ cIndex + 1 }}
@@ -348,7 +383,7 @@ onMounted(() => {
                 <span class="text-start text-base font-medium sm:text-lg">
                   {{ choice }}
                 </span>
-              </UButton>
+              </button>
             </div>
 
             <!-- Written Answer -->
@@ -361,16 +396,12 @@ onMounted(() => {
                 variant="outline"
                 color="neutral"
                 @keydown.enter="handleChangeQuestion('right')"
-                @blur="
-                  () => {
-                    console.log('user answer: ', q.userAnswer);
-                  }
-                "
+                @blur="onWrittenAnswerBlur(q)"
                 @click.stop="session.index = qIndex"
               />
 
               <UInput
-                v-if="q.isCorrect === false"
+                v-if="q.isCorrectChoice === false"
                 :ui="{
                   base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
                 }"
@@ -399,6 +430,17 @@ onMounted(() => {
             </div>
           </div>
         </UCard>
+
+        <UButton
+          block
+          size="xl"
+          color="primary"
+          variant="solid"
+          class="cursor-pointer font-bold shadow-lg transition-transform active:scale-[0.99]"
+          label="Submit Test"
+          icon="i-lucide-send-horizontal"
+          @click="onSubmitTest"
+        />
       </div>
 
       <UEmpty

@@ -61,7 +61,7 @@ export type QuestionDirection = 'term_to_def' | 'def_to_term' | 'both';
 export type TestQuestion = Omit<LearnQuestion, 'streak' | 'reviewDate'> & {
   userAnswer?: string;
   userChoiceIndex?: number;
-  isCorrect?: boolean;
+  isCorrectChoice?: boolean;
 };
 
 export type TestSetting = {

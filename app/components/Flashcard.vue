@@ -110,10 +110,7 @@ function handleAnswer(correct: boolean) {
   const updated = Object.assign(
     {},
     flashcard.value,
-    calcCardState({
-      ...flashcard.value,
-      correct,
-    }),
+    calcCardState({ ...flashcard.value, correct }),
   );
 
   if (correct) {

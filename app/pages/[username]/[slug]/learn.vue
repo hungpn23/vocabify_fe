@@ -6,10 +6,9 @@ const { token } = useAuth();
 const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
-const debouncedHandleAnswer = useDebounceFn(handleAnswer, 500);
 
 const isCorrect = ref<boolean | undefined>(undefined);
-const isReviewShowing = ref(false);
+const isInReview = ref(false);
 const isAnswerSaving = ref(false);
 const isIgnoreDate = ref(false);
 const isSettingOpen = ref(false);
@@ -59,7 +58,7 @@ const username = computed(() => {
 const userInputClass = computed(() => {
   let className = '';
 
-  if (isReviewShowing.value) className += ' ring-2';
+  if (isInReview.value) className += ' ring-2';
   if (isCorrect.value) className += ' ring-success';
   if (isIncorrect.value) className += ' ring-error';
 
@@ -77,18 +76,15 @@ const {
 
 watch(deck, (newDeck) => {
   if (newDeck && newDeck.cards.length > 0) {
-    isCorrect.value = undefined;
-    isReviewShowing.value = false;
     isAnswerSaving.value = false;
     isIgnoreDate.value = false;
     isSettingOpen.value = false;
     correctCount.value = 0;
     incorrectCount.value = 0;
-    userAnswer.value = '';
-    userChoiceIndex.value = -1;
-
     learn.answers = [];
     learn.retryQueue = [];
+
+    resetQuestionState();
 
     learn.queue = generateQuestions<LearnQuestion>({
       cards: getCards(newDeck.cards, isIgnoreDate.value),
@@ -120,7 +116,7 @@ watchDebounced(learn, saveAnswers, {
 
 function submitAnswer(userAnswer: number | string) {
   const q = question.value;
-  if (!q || isReviewShowing.value) return;
+  if (!q || isInReview.value) return;
 
   if (q.type === 'multiple_choices' && typeof userAnswer === 'number') {
     userChoiceIndex.value = userAnswer;
@@ -135,27 +131,27 @@ function submitAnswer(userAnswer: number | string) {
     return;
   }
 
-  isReviewShowing.value = true;
+  isInReview.value = true;
 
   if (isCorrect.value) {
-    debouncedHandleAnswer(true, q);
+    setTimeout(() => {
+      throttledHandleAnswer(true, q);
+    }, 500);
   } else {
     if (setting.showCorrectAnswer) return;
 
-    debouncedHandleAnswer(false, q);
+    throttledHandleAnswer(false, q);
   }
 }
 
-function handleAnswer(correct?: boolean, question?: LearnQuestion) {
-  if (!question || correct === undefined) return;
+const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
+
+function handleAnswer(correct?: boolean, q?: LearnQuestion) {
+  if (!q || correct === undefined) return;
 
   isAnswerSaving.value = true;
 
-  const updated = Object.assign(
-    {},
-    question,
-    calcCardState({ ...question, correct }),
-  );
+  const updated = Object.assign({}, q, calcCardState({ ...q, correct }));
 
   if (correct) {
     correctCount.value++;
@@ -173,26 +169,29 @@ function handleAnswer(correct?: boolean, question?: LearnQuestion) {
   }
 
   if (!learn.queue.length) {
-    if (!learn.retryQueue.length) return nextQuestion();
+    if (!learn.retryQueue.length) {
+      resetQuestionState();
+      question.value = undefined;
+    }
 
     learn.queue = learn.retryQueue;
     learn.retryQueue = [];
   }
 
-  nextQuestion();
+  resetQuestionState();
+  question.value = learn.queue.shift();
 }
 
-function nextQuestion() {
+const throttledHandleAnswer = useThrottleFn(handleAnswer, 500);
+
+function resetQuestionState() {
   isCorrect.value = undefined;
-  isReviewShowing.value = false;
+  isInReview.value = false;
   userAnswer.value = '';
   userChoiceIndex.value = -1;
 
   const inputRef = inputComponent.value?.inputRef;
-  console.log('🚀 ~ nextQuestion ~ inputRef:', inputRef);
   if (inputRef) inputRef.focus();
-
-  question.value = learn.queue.shift();
 }
 
 async function saveAnswers() {
@@ -237,18 +236,64 @@ async function onSettingClosed() {
 
 function handleChoiceShortcut(index: number) {
   if (
-    isCorrect.value === false &&
-    isReviewShowing.value &&
+    isIncorrect.value &&
+    isInReview.value &&
     question.value?.correctChoiceIndex === index
   ) {
-    handleAnswer(isCorrect.value, question.value);
+    throttledHandleAnswer(isCorrect.value, question.value);
   } else {
-    submitAnswer(index);
+    throttledSubmitAnswer(index);
   }
 }
 
+function getChoiceBtnClass(cIndex: number) {
+  if (!question.value) return '';
+
+  const isThisSelected = userChoiceIndex.value === cIndex;
+  const isThisChoiceCorrect = question.value.correctChoiceIndex === cIndex;
+
+  const successClass =
+    'border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102';
+
+  if (isInReview.value) {
+    if (isThisSelected) {
+      if (isThisChoiceCorrect) {
+        return successClass;
+      }
+
+      return 'border-error bg-error/10 text-error';
+    }
+
+    if (isThisChoiceCorrect) {
+      return successClass + ' border-dashed';
+    }
+
+    return 'opacity-60';
+  }
+}
+
+function getChoiceDisabledState(cIndex: number) {
+  if (!isInReview.value) return false;
+
+  const q = question.value;
+  if (!q) return true;
+
+  const isThisSelected = userChoiceIndex.value === cIndex;
+  const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+
+  if (isThisSelected) {
+    return true;
+  }
+
+  if (isThisChoiceCorrect) {
+    return false;
+  }
+
+  return true;
+}
+
 defineShortcuts({
-  ' ': () => handleAnswer(isCorrect.value, question.value),
+  ' ': () => throttledHandleAnswer(isCorrect.value, question.value),
   '1': () => handleChoiceShortcut(0),
   '2': () => handleChoiceShortcut(1),
   '3': () => handleChoiceShortcut(2),
@@ -301,26 +346,26 @@ defineShortcuts({
           </span>
         </h1>
 
-        <div class="flex place-content-between">
+        <div class="flex place-content-between place-items-center">
           <div class="flex place-items-center gap-2">
             <UBadge
               :label="incorrectCount"
-              class="h-6 w-6 shrink-0 rounded-full px-2"
+              class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
               variant="subtle"
               color="error"
             />
 
-            <span class="text-error text-sm">Incorrect</span>
+            <span class="text-error sm:text-md text-sm">Incorrect</span>
           </div>
 
           <div>{{ `${correctCount} / ${learn.totalQuestions}` }}</div>
 
           <div class="flex place-items-center gap-2">
-            <span class="text-success text-sm">Correct</span>
+            <span class="text-success sm:text-md text-sm">Correct</span>
 
             <UBadge
               :label="correctCount"
-              class="h-6 w-6 shrink-0 rounded-full px-2"
+              class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
               variant="subtle"
               color="success"
             />
@@ -332,7 +377,7 @@ defineShortcuts({
             header: 'p-0 sm:px-0',
             body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 place-content-between p-2`,
           }"
-          class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md transition-all"
+          class="bg-elevated flex min-h-[50dvh] flex-col divide-none transition-all sm:shadow-md"
           :class="{
             'bg-inherit p-0 ring-0': !smAndLarger,
           }"
@@ -376,44 +421,24 @@ defineShortcuts({
               v-if="question.type === 'multiple_choices'"
               class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
             >
-              <UButton
-                v-for="(choice, index) in question.choices"
-                :key="index"
-                variant="outline"
-                color="neutral"
-                class="flex w-full cursor-pointer place-items-center gap-2 rounded-lg p-3 transition-all active:scale-98 disabled:pointer-events-none"
-                :class="{
-                  'hover:text-primary hover:ring-primary/50 hover:bg-primary/10 hover:shadow':
-                    !isReviewShowing,
-                  'ring-success ring-2':
-                    isReviewShowing && index === question!.correctChoiceIndex,
-                  'ring-default ring':
-                    isReviewShowing &&
-                    !setting.showCorrectAnswer &&
-                    isIncorrect,
-                  'ring-error ring-2':
-                    isReviewShowing && isIncorrect && index === userChoiceIndex,
-                }"
-                :disabled="
-                  (isReviewShowing &&
-                    isIncorrect &&
-                    index !== question.correctChoiceIndex) ||
-                  (isReviewShowing && isCorrect) ||
-                  (isReviewShowing && !setting.showCorrectAnswer)
-                "
-                @click="handleChoiceShortcut(index)"
+              <button
+                v-for="(choice, cIndex) in question.choices"
+                :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
+                :key="cIndex"
+                :disabled="getChoiceDisabledState(cIndex)"
+                @click="handleChoiceShortcut(cIndex)"
               >
                 <UBadge
-                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full font-bold text-inherit ring-inherit transition-all sm:flex"
+                  class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
                   variant="outline"
                 >
-                  {{ index + 1 }}
+                  {{ cIndex + 1 }}
                 </UBadge>
 
                 <span class="text-start text-base font-medium sm:text-lg">
                   {{ choice }}
                 </span>
-              </UButton>
+              </button>
             </div>
 
             <!-- Written Answer -->
@@ -427,7 +452,7 @@ defineShortcuts({
                 variant="outline"
                 color="neutral"
                 autofocus
-                @keydown.enter="submitAnswer(userAnswer)"
+                @keydown.enter="throttledSubmitAnswer(userAnswer)"
               />
 
               <UInput
@@ -453,7 +478,7 @@ defineShortcuts({
                 v-if="question.type === 'written'"
                 :disabled="!userAnswer"
                 class="cursor-pointer font-medium"
-                @click="submitAnswer(userAnswer)"
+                @click="throttledSubmitAnswer(userAnswer)"
               >
                 Answer
               </UButton>
@@ -473,7 +498,7 @@ defineShortcuts({
           <div></div>
 
           <div
-            v-if="isReviewShowing && setting.showCorrectAnswer && isIncorrect"
+            v-if="isInReview && setting.showCorrectAnswer && isIncorrect"
             class="place-self-center font-semibold"
           >
             Press <Kbd label="Space" />

@@ -1,4 +1,4 @@
-export default <T extends Question | TestQuestion>(options: {
+export default <T extends LearnQuestion | TestQuestion>(options: {
   cards: Card[];
   types: QuestionType[];
   dir: QuestionDirection;
