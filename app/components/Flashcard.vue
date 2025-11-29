@@ -107,11 +107,7 @@ function handleAnswer(correct: boolean) {
 
   isAnswersSaving.value = true;
 
-  const updated = Object.assign(
-    {},
-    flashcard.value,
-    calcCardState({ ...flashcard.value, correct }),
-  );
+  const updated = Object.assign({}, updateCard(flashcard.value, correct));
 
   if (correct) {
     knownCount.value++;

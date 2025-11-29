@@ -80,7 +80,10 @@ export const shuffleArray = <T>(array: T[]) => {
   return arr;
 };
 
-export const updateCard = (q: LearnQuestion, isCorrect: boolean) => {
+export const updateCard = <T extends Card | LearnQuestion>(
+  q: T,
+  isCorrect: boolean,
+) => {
   const { streak, reviewDate, ...rest } = q;
   const now = new Date();
 

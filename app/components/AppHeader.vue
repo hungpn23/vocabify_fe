@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { UAvatar } from '#components';
+import { breakpointsTailwind } from '@vueuse/core';
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 
-const route = useRoute();
 const { status, data } = useAuthState();
 const { signOut } = useAuth();
 const colorMode = useColorMode();
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const smAndLarger = breakpoints.greaterOrEqual('sm');
+
+const isDarkMode = computed(() => colorMode.value === 'dark');
 
 const items = computed<NavigationMenuItem[]>(() => [
   {
@@ -22,12 +26,10 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
       to: '/profile',
     },
     {
-      label: colorMode.value === 'dark' ? 'Light Mode' : 'Dark Mode',
-      icon: colorMode.value === 'dark' ? 'i-lucide-sun' : 'i-lucide-moon',
-      onSelect: () => {
-        colorMode.preference = colorMode.value === 'dark' ? 'light' : 'dark';
-      },
+      label: isDarkMode.value ? 'Light Mode' : 'Dark Mode',
+      icon: isDarkMode.value ? 'i-lucide-sun' : 'i-lucide-moon',
       class: 'cursor-pointer',
+      onSelect: toggleColorMode,
     },
     {
       label: 'Settings',
@@ -39,10 +41,22 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
     {
       label: 'Logout',
       icon: 'i-lucide-log-out',
-      onSelect: async () => await signOut({ callbackUrl: '/' }),
+      onSelect: onSignOut,
     },
   ],
 ]);
+
+function toggleColorMode() {
+  colorMode.preference = isDarkMode.value ? 'light' : 'dark';
+}
+
+async function onSignOut() {
+  await signOut({ callbackUrl: '/' });
+}
+
+defineShortcuts({
+  '`': toggleColorMode,
+});
 </script>
 
 <template>
@@ -53,18 +67,12 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
       </NuxtLink>
     </template>
 
-    <UNavigationMenu :items="items" variant="link" />
+    <template #default>
+      <UNavigationMenu :items="items" variant="link" />
+    </template>
 
     <template #right>
       <div v-if="status === 'unauthenticated'">
-        <UButton
-          icon="i-lucide-log-in"
-          color="neutral"
-          variant="ghost"
-          to="/login"
-          class="lg:hidden"
-        />
-
         <UButton
           label="Sign in"
           color="neutral"
@@ -82,21 +90,38 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
         />
       </div>
 
-      <UDropdownMenu
-        v-else
-        type="hover"
-        :items="avatarItems"
-        :content="{
-          align: 'start',
-        }"
-        arrow
-      >
-        <UAvatar
-          class="squircle rounded-none"
-          :src="data?.avatarUrl || ''"
-          icon="i-lucide-image"
+      <div v-else class="flex place-content-between place-items-center gap-1.5">
+        <UInput
+          v-if="smAndLarger"
+          icon="i-lucide-search"
+          variant="outline"
+          color="neutral"
+          placeholder="Search..."
         />
-      </UDropdownMenu>
+
+        <UButton
+          v-else
+          icon="i-lucide-search"
+          variant="ghost"
+          color="neutral"
+        />
+
+        <KeyboardShortcuts />
+
+        <UColorModeButton />
+
+        <UChip inset>
+          <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />
+        </UChip>
+
+        <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
+          <UAvatar
+            class="squircle rounded-none"
+            :src="data?.avatarUrl || ''"
+            icon="i-lucide-image"
+          />
+        </UDropdownMenu>
+      </div>
     </template>
 
     <template #body>

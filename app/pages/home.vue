@@ -1,7 +1,6 @@
 <script lang="ts" setup>
-import { QueryOrder } from '~/utils/enums.ts';
 import { formatTimeAgo } from '@vueuse/core';
-import type { PageCardProps, SelectMenuItem } from '@nuxt/ui';
+import type { SelectMenuItem } from '@nuxt/ui';
 
 const cardStatistics = [
   {
@@ -161,14 +160,15 @@ watch(
         :title="`Welcome back, ${user?.username}!`"
         description="Continue learning and expand your vocabulary."
       >
-        <UPageGrid class="mt-4">
+        <UPageGrid class="mt-4 sm:grid-cols-1 md:grid-cols-3">
           <UPageCard
             v-for="(c, index) in cardStatistics"
             :key="index"
+            :ui="{}"
             :class="`text-${c.color}`"
-            variant="subtle"
-            spotlight
             :spotlight-color="c.color"
+            spotlight
+            variant="subtle"
           >
             <div class="flex place-content-between items-center">
               <h3>{{ c.title }}</h3>

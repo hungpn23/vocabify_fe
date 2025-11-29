@@ -32,6 +32,14 @@ const isShortcutOpen = ref(false);
 
     <template #body>
       <div class="flex flex-col gap-2 font-semibold">
+        <div class="flex place-content-between place-items-center gap-2">
+          <div>Toggle color mode</div>
+
+          <div class="flex place-items-center">
+            <Kbd label="`" />
+          </div>
+        </div>
+
         <USeparator label="Flashcard" />
 
         <div class="flex place-content-between place-items-center gap-2">

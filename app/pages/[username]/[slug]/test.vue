@@ -9,13 +9,15 @@ const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 const cardRefs = useTemplateRef('cards');
 
+const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
+
 const isSettingOpen = ref(false);
 const isSubmitted = ref(false);
 const questions = ref<TestQuestion[]>([]);
 
 const setting = reactive<TestSetting>({
   questionAmount: 0,
-  types: ['multiple_choices'],
+  types: ['multiple_choices', 'written'],
   direction: 'term_to_def',
 });
 let snapshotSetting = '';
@@ -29,6 +31,8 @@ const session = reactive({
     return cardRefs.value[this.index]?.$el as Element | undefined;
   },
 });
+
+const currentQuestion = computed(() => questions.value[session.index]);
 
 const deckId = computed(() => route.query.deckId as string);
 
@@ -66,7 +70,7 @@ watch(deck, (newDeck) => {
       setting.questionAmount = newDeck.cards.length;
 
     questions.value = generateQuestions<TestQuestion>({
-      cards: shuffle(newDeck.cards).slice(0, setting.questionAmount),
+      cards: shuffleArray(newDeck.cards).slice(0, setting.questionAmount),
       types: setting.types,
       dir: setting.direction,
       answerPool: newDeck.cards.map((c) => ({
@@ -127,7 +131,9 @@ async function onSettingClosed() {
   scrollAndFocus();
 }
 
-function onChoiceSelected(q: TestQuestion, qIndex: number, cIndex: number) {
+function onChoiceSelected(cIndex: number, qIndex: number, q?: TestQuestion) {
+  if (!q) return;
+
   q.userChoiceIndex = cIndex;
   q.isCorrectChoice = cIndex === q.correctChoiceIndex;
   session.index = qIndex;
@@ -140,10 +146,6 @@ function onWrittenAnswerBlur(q: TestQuestion) {
   q.userAnswer = q.userAnswer.trim();
   q.isCorrectChoice =
     q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
-}
-
-function onSubmitTest() {
-  isSubmitted.value = true;
 }
 
 function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
@@ -174,14 +176,10 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
 }
 
 defineShortcuts({
-  '1': () =>
-    onChoiceSelected(questions.value[session.index]!, session.index, 0),
-  '2': () =>
-    onChoiceSelected(questions.value[session.index]!, session.index, 1),
-  '3': () =>
-    onChoiceSelected(questions.value[session.index]!, session.index, 2),
-  '4': () =>
-    onChoiceSelected(questions.value[session.index]!, session.index, 3),
+  '1': () => throttledOnChoiceSelected(0, session.index, currentQuestion.value),
+  '2': () => throttledOnChoiceSelected(1, session.index, currentQuestion.value),
+  '3': () => throttledOnChoiceSelected(2, session.index, currentQuestion.value),
+  '4': () => throttledOnChoiceSelected(3, session.index, currentQuestion.value),
 
   arrowleft: {
     handler: () => handleChangeQuestion('left'),
@@ -324,7 +322,7 @@ onMounted(() => {
           @click="session.index = qIndex"
         >
           <div class="flex w-full place-content-between place-items-center">
-            <span class="flex place-items-center gap-1 font-semibold">
+            <span class="flex place-items-center gap-1 font-medium">
               <UButton
                 class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
                 icon="i-lucide-volume-2"
@@ -347,7 +345,7 @@ onMounted(() => {
           </div>
 
           <div class="mt-2 flex w-full flex-col gap-2">
-            <span class="font-bold">
+            <span class="font-medium">
               {{
                 q.type === 'multiple_choices'
                   ? 'Choose an answer'
@@ -365,7 +363,7 @@ onMounted(() => {
                 :key="cIndex"
                 :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(q, cIndex)}`"
                 :disabled="isSubmitted"
-                @click.stop="onChoiceSelected(q, qIndex, cIndex)"
+                @click.stop="throttledOnChoiceSelected(cIndex, qIndex, q)"
               >
                 <UBadge
                   class="hidden h-8 w-8 shrink-0 place-content-center place-items-center rounded-full border border-inherit font-bold text-inherit ring-0 transition-all sm:flex"
@@ -433,7 +431,7 @@ onMounted(() => {
           class="cursor-pointer font-bold shadow-lg transition-transform active:scale-[0.99]"
           label="Submit Test"
           icon="i-lucide-send-horizontal"
-          @click="onSubmitTest"
+          @click="isSubmitted = true"
         />
       </div>
 

@@ -21,7 +21,7 @@ const userAnswer = ref('');
 const userChoiceIndex = ref<number>(-1);
 const question = ref<LearnQuestion | undefined>(undefined);
 
-const inputComponent = useTemplateRef('input');
+const inputElement = useTemplateRef('input');
 
 const learn = reactive<LearnState>({
   totalQuestions: 0,
@@ -32,7 +32,7 @@ const learn = reactive<LearnState>({
 
 const setting = reactive<LearnSetting>({
   showCorrectAnswer: true,
-  types: ['multiple_choices'],
+  types: ['written'],
   direction: 'term_to_def',
 });
 let snapshotSetting = '';
@@ -58,15 +58,15 @@ const username = computed(() => {
   return Array.isArray(n) ? n[0] : n;
 });
 
-const userInputClass = computed(() => {
-  let className = '';
+// const userInputClass = computed(() => {
+//   let className = '';
 
-  if (isInReview.value) className += ' ring-2';
-  if (isCorrect.value) className += ' ring-success';
-  if (isIncorrect.value) className += ' ring-error';
+//   if (isInReview.value) className += ' ring-2';
+//   if (isCorrect.value) className += ' ring-success';
+//   if (isIncorrect.value) className += ' ring-error';
 
-  return className;
-});
+//   return className;
+// });
 
 const {
   data: deck,
@@ -124,7 +124,7 @@ function submitAnswer(userAnswer: number | string) {
     userChoiceIndex.value = userAnswer;
     isCorrect.value = userAnswer === q.correctChoiceIndex;
   } else if (q.type === 'written' && typeof userAnswer === 'string') {
-    const inputRef = inputComponent.value?.inputRef;
+    const inputRef = inputElement.value?.inputRef;
     if (inputRef) inputRef.blur();
 
     isCorrect.value =
@@ -188,8 +188,12 @@ function resetQuestionState() {
   userAnswer.value = '';
   userChoiceIndex.value = -1;
 
-  const inputRef = inputComponent.value?.inputRef;
-  if (inputRef) inputRef.focus();
+  const inputRef = inputElement.value?.inputRef;
+  if (inputRef) {
+    setTimeout(() => {
+      inputRef.focus();
+    }, 300);
+  }
 }
 
 async function saveAnswers() {
@@ -266,8 +270,18 @@ function getChoiceBtnClass(cIndex: number) {
       return successClass + ' border-dashed';
     }
 
-    return 'opacity-60';
+    return 'opacity-70';
   }
+}
+
+function getWrittenInputClass() {
+  if (!isInReview.value) return '';
+
+  if (isCorrect.value) {
+    return 'border-success';
+  }
+
+  return 'border-error';
 }
 
 function getChoiceDisabledState(cIndex: number) {
@@ -381,14 +395,14 @@ defineShortcuts({
           }"
         >
           <div class="flex w-full place-content-between place-items-center">
-            <span class="flex place-items-center gap-1 font-semibold">
+            <span class="flex place-items-center gap-1 font-medium">
               <UButton
                 class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
                 icon="i-lucide-volume-2"
                 variant="soft"
                 color="neutral"
               />
-              Term
+              {{ question.direction === 'term_to_def' ? 'Term' : 'Definition' }}
             </span>
 
             <UButton
@@ -406,7 +420,7 @@ defineShortcuts({
           </div>
 
           <div class="mt-2 flex w-full flex-col gap-2">
-            <span class="font-bold">
+            <span class="font-medium">
               {{
                 question.type === 'multiple_choices'
                   ? 'Choose an answer'
@@ -444,8 +458,9 @@ defineShortcuts({
               <UInput
                 v-model="userAnswer"
                 :ui="{
-                  base: `text-lg sm:text-xl transition-all ${userInputClass}`,
+                  base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
                 }"
+                :disabled="isInReview"
                 ref="input"
                 variant="outline"
                 color="neutral"
@@ -453,29 +468,33 @@ defineShortcuts({
                 @keydown.enter="throttledSubmitAnswer(userAnswer)"
               />
 
-              <UInput
-                v-if="isCorrect === false"
-                :ui="{
-                  base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
-                }"
-                :default-value="question.correctAnswer"
-                disabled
-              />
+              <Transition>
+                <UInput
+                  v-if="isIncorrect && setting.showCorrectAnswer"
+                  :ui="{
+                    base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
+                  }"
+                  :default-value="question.correctAnswer"
+                  disabled
+                />
+              </Transition>
             </div>
 
             <div class="flex place-content-end place-items-center gap-2">
               <UButton
                 class="cursor-pointer place-self-end font-medium"
                 variant="ghost"
+                color="error"
                 tabindex="-1"
               >
-                Don't know?
+                Skip?
               </UButton>
 
               <UButton
                 v-if="question.type === 'written'"
                 :disabled="!userAnswer"
                 class="cursor-pointer font-medium"
+                size="lg"
                 @click="throttledSubmitAnswer(userAnswer)"
               >
                 Answer
