@@ -160,7 +160,7 @@ defineShortcuts({
 </script>
 
 <template>
-  <ClientOnly>
+  <div>
     <slot name="routes"></slot>
 
     <div v-if="pending" class="flex justify-center p-10">
@@ -211,7 +211,7 @@ defineShortcuts({
         @click="throttledToggleFlip"
       >
         <div class="flex w-full place-content-between place-items-center">
-          <span class="flex place-items-center gap-1 font-bold">
+          <span class="flex place-items-center gap-1 font-medium">
             <UButton
               class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
               icon="i-lucide-volume-2"
@@ -224,18 +224,7 @@ defineShortcuts({
             {{ !isFlipped ? 'Term' : 'Definition' }}
           </span>
 
-          <UBadge
-            :label="flashcard.status"
-            :color="
-              {
-                known: 'success' as const,
-                learning: 'warning' as const,
-                new: 'info' as const,
-              }[flashcard.status]
-            "
-            class="capitalize"
-            variant="subtle"
-          />
+          <CardStatusBadge :card="flashcard" />
         </div>
 
         <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
@@ -254,7 +243,7 @@ defineShortcuts({
       </UCard>
 
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3">
-        <div class="col-span-1 hidden sm:block">
+        <div class="col-span-1">
           <slot name="actions-left"></slot>
         </div>
 
@@ -286,7 +275,7 @@ defineShortcuts({
           </UTooltip>
         </div>
 
-        <div class="col-span-1 flex place-content-end place-items-center gap-2">
+        <div class="col-span-1 flex place-content-end gap-2">
           <slot name="actions-right"></slot>
         </div>
       </div>
@@ -326,5 +315,5 @@ defineShortcuts({
       description="Optimize your retention by strictly adhering to the next review date."
       size="xl"
     />
-  </ClientOnly>
+  </div>
 </template>

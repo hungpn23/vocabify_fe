@@ -7,8 +7,11 @@ const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
 
-const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
-const throttledHandleAnswer = useThrottleFn(handleAnswer, 500);
+const throttledOnAnswerSubmitted = useThrottleFn(onAnswerSubmitted, 500);
+const throttledHandleSubmittedAnswer = useThrottleFn(
+  handleSubmittedAnswer,
+  500,
+);
 
 const isCorrect = ref<boolean | undefined>(undefined);
 const isInReview = ref(false);
@@ -105,7 +108,7 @@ watchDebounced(learn, saveAnswers, {
   deep: true,
 });
 
-function submitAnswer(userAnswer: number | string) {
+function onAnswerSubmitted(userAnswer: number | string) {
   const q = question.value;
   if (!q || isInReview.value) return;
 
@@ -125,29 +128,28 @@ function submitAnswer(userAnswer: number | string) {
   isInReview.value = true;
 
   if (isCorrect.value) {
+    correctCount.value++;
+
     setTimeout(() => {
-      throttledHandleAnswer(true, q);
+      throttledHandleSubmittedAnswer(true, q);
     }, 500);
   } else {
+    incorrectCount.value++;
+
     if (setting.showCorrectAnswer) return;
 
-    throttledHandleAnswer(false, q);
+    throttledHandleSubmittedAnswer(false, q);
   }
 }
 
-function handleAnswer(isCorrect?: boolean, q?: LearnQuestion) {
+function handleSubmittedAnswer(isCorrect?: boolean, q?: LearnQuestion) {
   if (!q || isCorrect === undefined) return;
 
   isAnswerSaving.value = true;
 
   const updated = Object.assign({}, updateCard(q, isCorrect));
 
-  if (isCorrect) {
-    correctCount.value++;
-  } else {
-    incorrectCount.value++;
-    learn.retryQueue.push(updated);
-  }
+  if (isIncorrect.value) learn.retryQueue.push(updated);
 
   // trigger saveAnswers in watchDebounced
   const index = learn.answers.findIndex((a) => a.id === updated.id);
@@ -231,9 +233,9 @@ function handleChoiceShortcut(index: number) {
     isInReview.value &&
     question.value?.correctChoiceIndex === index
   ) {
-    throttledHandleAnswer(isCorrect.value, question.value);
+    throttledHandleSubmittedAnswer(isCorrect.value, question.value);
   } else {
-    throttledSubmitAnswer(index);
+    throttledOnAnswerSubmitted(index);
   }
 }
 
@@ -294,7 +296,7 @@ function getChoiceDisabledState(cIndex: number) {
 }
 
 defineShortcuts({
-  ' ': () => throttledHandleAnswer(isCorrect.value, question.value),
+  ' ': () => throttledHandleSubmittedAnswer(isCorrect.value, question.value),
   '1': () => handleChoiceShortcut(0),
   '2': () => handleChoiceShortcut(1),
   '3': () => handleChoiceShortcut(2),
@@ -453,7 +455,7 @@ defineShortcuts({
               variant="outline"
               color="neutral"
               autofocus
-              @keydown.enter="throttledSubmitAnswer(userAnswer)"
+              @keydown.enter="throttledOnAnswerSubmitted(userAnswer)"
             />
 
             <Transition>
@@ -483,7 +485,7 @@ defineShortcuts({
               :disabled="!userAnswer"
               class="cursor-pointer font-medium"
               size="lg"
-              @click="throttledSubmitAnswer(userAnswer)"
+              @click="throttledOnAnswerSubmitted(userAnswer)"
             >
               Answer
             </UButton>

@@ -96,7 +96,7 @@ defineShortcuts({
           icon="i-lucide-search"
           variant="outline"
           color="neutral"
-          placeholder="Search..."
+          placeholder="Search everything..."
         />
 
         <UButton

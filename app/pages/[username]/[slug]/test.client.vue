@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { UCard } from '#components';
 import { breakpointsTailwind } from '@vueuse/core';
-import type { TestSetting } from '~~/shared/types/card';
+import type { TestQuestion, TestSetting } from '~~/shared/types/card';
 
 const { token } = useAuth();
 const route = useRoute();
@@ -134,7 +134,7 @@ function onChoiceSelected(cIndex: number, qIndex: number, q?: TestQuestion) {
   if (!q) return;
 
   q.userChoiceIndex = cIndex;
-  q.isCorrectChoice = cIndex === q.correctChoiceIndex;
+  q.isUserAnswerCorrect = cIndex === q.correctChoiceIndex;
   session.index = qIndex;
   handleChangeQuestion('right');
 }
@@ -143,8 +143,22 @@ function onWrittenAnswerBlur(q: TestQuestion) {
   if (!q.userAnswer) return;
 
   q.userAnswer = q.userAnswer.trim();
-  q.isCorrectChoice =
+  q.isUserAnswerCorrect =
     q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
+}
+
+function onDontKnowClicked(q: TestQuestion, qIndex: number) {
+  if (q.isMarkedAsDontKnow) return;
+
+  q.isMarkedAsDontKnow = true;
+  q.isUserAnswerCorrect = true;
+  session.index = qIndex;
+  handleChangeQuestion('right');
+}
+
+function onTestSubmitted() {
+  isSubmitted.value = true;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
@@ -170,8 +184,18 @@ function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
       return 'border-dashed border-success bg-success/10 text-success';
     }
 
-    return 'opacity-60';
+    return 'opacity-70';
   }
+}
+
+function getWrittenInputClass(q: TestQuestion) {
+  if (!isSubmitted.value) return '';
+
+  if (q.isUserAnswerCorrect) {
+    return 'border-success';
+  }
+
+  return 'border-error';
 }
 
 defineShortcuts({
@@ -312,7 +336,7 @@ onMounted(() => {
         @click="session.index = qIndex"
       >
         <div class="flex w-full place-content-between place-items-center">
-          <span class="flex place-items-center gap-1 font-medium">
+          <span class="flex place-items-center gap-1">
             <UButton
               class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
               icon="i-lucide-volume-2"
@@ -325,7 +349,7 @@ onMounted(() => {
 
           <UBadge
             :label="`${qIndex + 1} of ${questions.length}`"
-            variant="subtle"
+            variant="soft"
             color="neutral"
           />
         </div>
@@ -335,7 +359,7 @@ onMounted(() => {
         </div>
 
         <div class="mt-2 flex w-full flex-col gap-2">
-          <span class="font-medium">
+          <span class="">
             {{
               q.type === 'multiple_choices'
                 ? 'Choose an answer'
@@ -351,8 +375,8 @@ onMounted(() => {
             <button
               v-for="(choice, cIndex) in q.choices"
               :key="cIndex"
-              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(q, cIndex)}`"
-              :disabled="isSubmitted"
+              :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none disabled:opacity-70 ${getChoiceBtnClass(q, cIndex)}`"
+              :disabled="isSubmitted || q.isMarkedAsDontKnow"
               @click.stop="throttledOnChoiceSelected(cIndex, qIndex, q)"
             >
               <UBadge
@@ -373,8 +397,9 @@ onMounted(() => {
             <UInput
               v-model="q.userAnswer"
               :ui="{
-                base: `text-lg sm:text-xl transition-all`,
+                base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 disabled:opacity-70 ${getWrittenInputClass(q)}`,
               }"
+              :disabled="isSubmitted || q.isMarkedAsDontKnow"
               variant="outline"
               color="neutral"
               @keydown.enter="handleChangeQuestion('right')"
@@ -383,9 +408,9 @@ onMounted(() => {
             />
 
             <UInput
-              v-if="q.isCorrectChoice === false"
+              v-if="!q.isUserAnswerCorrect && isSubmitted"
               :ui="{
-                base: `text-lg sm:text-xl transition-all ring-2 ring-success disabled:opacity-100 disabled:cursor-not-allowed`,
+                base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
               }"
               :default-value="q.correctAnswer"
               disabled
@@ -394,34 +419,25 @@ onMounted(() => {
 
           <div class="flex place-content-end place-items-center gap-2">
             <UButton
+              v-if="!q.isMarkedAsDontKnow"
               class="cursor-pointer place-self-end font-medium"
               variant="ghost"
               tabindex="-1"
+              @click.stop="onDontKnowClicked(q, qIndex)"
             >
-              Don't know?
-            </UButton>
-
-            <UButton
-              v-if="q.type === 'written'"
-              :disabled="!q.userAnswer"
-              class="cursor-pointer font-medium"
-              @click="console.log('submitted answer', q.userAnswer)"
-            >
-              Answer
+              Mark as "Don't know"
             </UButton>
           </div>
         </div>
       </UCard>
 
       <UButton
-        block
-        size="xl"
-        color="primary"
-        variant="solid"
-        class="cursor-pointer font-bold shadow-lg transition-transform active:scale-[0.99]"
+        v-if="!isSubmitted"
+        class="w-fit cursor-pointer place-self-center font-medium transition-all hover:scale-103 active:scale-98"
         label="Submit Test"
         icon="i-lucide-send-horizontal"
-        @click="isSubmitted = true"
+        size="xl"
+        @click="onTestSubmitted"
       />
     </div>
 

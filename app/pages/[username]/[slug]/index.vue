@@ -58,17 +58,17 @@ const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
 const studyOptions = computed(() => [
   {
     label: 'Flashcards',
-    icon: 'i-lucide-file-plus',
+    icon: 'i-lucide-gallery-horizontal-end',
     to: `/${user.value?.username}/${deckSlug.value}/flashcards?deckId=${deckId.value}`,
   },
   {
     label: 'Learn',
-    icon: 'i-lucide-book-marked',
+    icon: 'i-lucide-notebook-pen',
     to: `/${user.value?.username}/${deckSlug.value}/learn?deckId=${deckId.value}`,
   },
   {
     label: 'Test',
-    icon: 'i-lucide-book-check',
+    icon: 'i-lucide-flask-conical',
     to: `/${user.value?.username}/${deckSlug.value}/test?deckId=${deckId.value}`,
   },
   {
@@ -312,7 +312,9 @@ function getCards(ignoreDate: boolean) {
               >
                 <UIcon v-if="icon" :name="icon" class="size-5" />
 
-                <h3 class="truncate text-lg font-medium">{{ label }}</h3>
+                <h3 class="truncate text-base font-medium sm:text-lg">
+                  {{ label }}
+                </h3>
               </UButton>
             </div>
 
@@ -412,7 +414,7 @@ function getCards(ignoreDate: boolean) {
           <div class="flex flex-col gap-4">
             <div class="flex place-content-between place-items-center gap-4">
               <h2
-                class="flex place-items-center gap-1 text-xl font-bold text-pretty sm:text-2xl"
+                class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
                 Terms ({{ deckState.cards?.length || 0 }})
 
@@ -483,18 +485,7 @@ function getCards(ignoreDate: boolean) {
                 <div
                   :class="`mb-1 flex place-content-between place-items-center gap-2 ${isEditing ? 'px-0' : 'px-2.5'}`"
                 >
-                  <UBadge
-                    :label="c.status"
-                    :color="
-                      {
-                        known: 'success' as const,
-                        learning: 'warning' as const,
-                        new: 'info' as const,
-                      }[c.status]
-                    "
-                    class="capitalize"
-                    variant="subtle"
-                  />
+                  <CardStatusBadge :card="c" />
 
                   <UButton
                     v-if="isEditing"
@@ -509,7 +500,7 @@ function getCards(ignoreDate: boolean) {
                     v-else-if="
                       !isEditing && c.reviewDate && c.status === 'known'
                     "
-                    class="text-right text-sm text-balance"
+                    class="text-muted text-right text-sm text-balance"
                   >
                     Next review
 

@@ -173,7 +173,7 @@ watch(
             spotlight
             variant="subtle"
           >
-            <div class="flex place-content-between items-center">
+            <div class="flex place-content-between place-items-center">
               <h3>{{ c.title }}</h3>
               <UIcon :name="c.icon" size="2rem" />
             </div>
@@ -214,28 +214,39 @@ watch(
           </div>
         </div>
 
-        <UPageList divide>
+        <UPageList class="gap-2 sm:gap-4" divide>
           <TransitionGroup name="list" appear>
             <UPageCard
               v-for="deck in paginated?.data || []"
-              class="my-1.5 shadow-md"
               :key="deck.id"
-              :description="
-                deck.openedAt
-                  ? `Last opened ${formatTimeAgo(new Date(deck.openedAt))}`
-                  : 'Never opened'
-              "
-              variant="subtle"
               :to="`/${user?.username}/${deck.slug}?deckId=${deck.id}`"
+              class="shadow-md"
+              variant="subtle"
             >
-              <UProgress :model-value="50" />
+              <div
+                class="flex flex-col place-content-start place-items-start gap-1 sm:flex-row sm:place-content-between"
+              >
+                <div class="flex place-items-center gap-1.5">
+                  <h4 class="truncate font-medium sm:text-lg">
+                    {{ deck.name }}
+                  </h4>
 
-              <template #title>
-                <div class="flex items-center gap-2">
-                  <span>{{ deck.name }}</span>
-                  <UIcon :name="getVisibilityIcon(deck.visibility)" />
+                  <UIcon
+                    :name="getVisibilityIcon(deck.visibility)"
+                    class="size-5"
+                  />
                 </div>
-              </template>
+
+                <div class="text-muted text-end text-sm">
+                  {{
+                    deck.openedAt
+                      ? `Last opened ${formatTimeAgo(new Date(deck.openedAt))}`
+                      : 'Never opened'
+                  }}
+                </div>
+              </div>
+
+              <UProgress :model-value="50" class="mt-4" />
             </UPageCard>
           </TransitionGroup>
         </UPageList>
