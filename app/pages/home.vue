@@ -128,10 +128,11 @@ const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
 
-const { data: paginated, error } = await useLazyFetch<
-  Paginated<Deck>,
-  ErrorResponse
->('/api/decks', {
+const {
+  data: paginated,
+  error,
+  pending,
+} = await useLazyFetch<Paginated<Deck>, ErrorResponse>('/api/decks', {
   query,
   headers: {
     Authorization: token.value || '',
@@ -154,6 +155,8 @@ watch(
 </script>
 
 <template>
+  <SkeletonHome v-if="pending" />
+
   <UPage>
     <UContainer>
       <UPageHeader

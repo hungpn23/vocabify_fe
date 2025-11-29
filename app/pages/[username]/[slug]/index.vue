@@ -36,7 +36,7 @@ const username = computed(() => {
   return Array.isArray(n) ? n[0] : n;
 });
 
-const DeckSettingOptions = computed<DropdownMenuItem[][]>(() => [
+const deckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   [
     {
       label: 'Edit',
@@ -55,7 +55,7 @@ const DeckSettingOptions = computed<DropdownMenuItem[][]>(() => [
   ],
 ]);
 
-const StudyOptions = computed(() => [
+const studyOptions = computed(() => [
   {
     label: 'Flashcards',
     icon: 'i-lucide-file-plus',
@@ -83,15 +83,12 @@ const {
   error,
   status,
   refresh: refreshData,
-} = await useLazyFetch<DeckWithCards, ErrorResponse>(
-  `/api/decks/${deckId.value}`,
-  {
-    headers: {
-      Authorization: token.value || '',
-    },
-    server: false,
+} = useLazyFetch<DeckWithCards, ErrorResponse>(`/api/decks/${deckId.value}`, {
+  headers: {
+    Authorization: token.value || '',
   },
-);
+  server: false,
+});
 
 watch(
   status,
@@ -306,7 +303,7 @@ function getCards(ignoreDate: boolean) {
             <!-- Learning Options -->
             <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
               <UButton
-                v-for="{ label, icon, to } in StudyOptions"
+                v-for="{ label, icon, to } in studyOptions"
                 :key="label"
                 :to="to"
                 class="hover:ring-primary hover:text-primary hover:bg-primary/10 flex place-content-center place-items-center py-3 transition-all hover:scale-102 hover:shadow"
@@ -362,7 +359,7 @@ function getCards(ignoreDate: boolean) {
                     size="lg"
                   />
 
-                  <UDropdownMenu :items="DeckSettingOptions">
+                  <UDropdownMenu :items="deckSettingOptions">
                     <UButton
                       class="cursor-pointer"
                       color="neutral"

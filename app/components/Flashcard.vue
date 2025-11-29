@@ -287,8 +287,6 @@ defineShortcuts({
         </div>
 
         <div class="col-span-1 flex place-content-end place-items-center gap-2">
-          <KeyboardShortcuts />
-
           <slot name="actions-right"></slot>
         </div>
       </div>

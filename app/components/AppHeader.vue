@@ -106,9 +106,9 @@ defineShortcuts({
           color="neutral"
         />
 
-        <KeyboardShortcuts />
+        <KeyboardShortcuts v-if="smAndLarger" />
 
-        <UColorModeButton />
+        <UColorModeButton v-if="smAndLarger" />
 
         <UChip inset>
           <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />

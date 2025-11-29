@@ -23,9 +23,8 @@ const {
   data: deck,
   pending,
   refresh,
-} = await useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
+} = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
   headers: { Authorization: token.value || '' },
-  server: false,
 });
 
 watch(deck, (newDeck) => {
