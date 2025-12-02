@@ -136,7 +136,7 @@ defineShortcuts({
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar
               v-if="user"
-              class="squircle cursor-pointer rounded-none"
+              class="cursor-pointer rounded-full"
               :src="user.avatarUrl || ''"
               icon="i-lucide-user"
             />

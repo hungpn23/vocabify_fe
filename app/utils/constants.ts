@@ -70,3 +70,14 @@ export const userStatsItems = [
     bonus: '',
   },
 ];
+
+export const profileTabItems = [
+  {
+    label: 'Decks',
+    icon: 'i-lucide-book',
+  },
+  {
+    label: 'Posts',
+    icon: 'i-lucide-pen-line',
+  },
+];
