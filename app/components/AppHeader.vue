@@ -3,7 +3,7 @@ import { UAvatar } from '#components';
 import { breakpointsTailwind } from '@vueuse/core';
 import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
 
-const { status, data } = useAuthState();
+const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
 const colorMode = useColorMode();
 const breakpoints = useBreakpoints(breakpointsTailwind);
@@ -15,6 +15,18 @@ const items = computed<NavigationMenuItem[]>(() => [
   {
     label: 'Home',
     to: '/home',
+  },
+  {
+    label: 'Community',
+    to: '#',
+  },
+  {
+    label: 'Forum',
+    to: '#',
+  },
+  {
+    label: 'About me',
+    to: '#',
   },
 ]);
 
@@ -28,7 +40,7 @@ const avatarItems = computed<DropdownMenuItem[][]>(() => [
     {
       label: isDarkMode.value ? 'Light Mode' : 'Dark Mode',
       icon: isDarkMode.value ? 'i-lucide-sun' : 'i-lucide-moon',
-      class: 'cursor-pointer',
+      class: 'cursor-pointer sm:hidden',
       onSelect: toggleColorMode,
     },
     {
@@ -102,24 +114,31 @@ defineShortcuts({
 
           <UButton
             v-else
+            class="cursor-pointer"
             icon="i-lucide-search"
             variant="ghost"
             color="neutral"
           />
 
-          <KeyboardShortcuts v-if="smAndLarger" />
+          <KeyboardShortcuts v-if="smAndLarger" class="cursor-pointer" />
 
-          <UColorModeButton v-if="smAndLarger" />
+          <UColorModeButton v-if="smAndLarger" class="cursor-pointer" />
 
           <UChip inset>
-            <UButton icon="i-lucide-bell" variant="ghost" color="neutral" />
+            <UButton
+              class="cursor-pointer"
+              icon="i-lucide-bell"
+              variant="ghost"
+              color="neutral"
+            />
           </UChip>
 
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar
-              class="squircle rounded-none"
-              :src="data?.avatarUrl || ''"
-              icon="i-lucide-image"
+              v-if="user"
+              class="squircle cursor-pointer rounded-none"
+              :src="user.avatarUrl || ''"
+              icon="i-lucide-user"
             />
           </UDropdownMenu>
         </ClientOnly>

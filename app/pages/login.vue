@@ -86,7 +86,7 @@ async function onSubmit(payload: FormSubmitEvent<Schema>) {
     :providers="providers"
     title="Welcome back"
     icon="i-lucide-lock"
-    @submit="onSubmit"
+    @submit.prevent="onSubmit"
   >
     <template #description>
       Don't have an account?

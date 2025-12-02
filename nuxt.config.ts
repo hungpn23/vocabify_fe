@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   runtimeConfig: {
     apiUrl: process.env.API_URL,
+    appUrl: process.env.APP_URL,
   },
   modules: [
     '@nuxt/eslint',
@@ -13,24 +14,13 @@ export default defineNuxtConfig({
     '@sidebase/nuxt-auth',
   ],
 
-  devtools: {
-    enabled: true,
-  },
+  // devtools: {
+  //   enabled: true,
+  // },
 
   css: ['~/assets/css/main.css'],
 
-  routeRules: {
-    '/docs': { redirect: '/docs/getting-started', prerender: false },
-  },
-
   compatibilityDate: '2024-07-11',
-
-  nitro: {
-    prerender: {
-      routes: ['/'],
-      crawlLinks: true,
-    },
-  },
 
   // https://auth.sidebase.io/guide/local/quick-start
   auth: {
@@ -42,7 +32,7 @@ export default defineNuxtConfig({
         signOut: { path: '/logout', method: 'post' },
         signUp: { path: '/register', method: 'post' },
         getSession: {
-          path: 'http://localhost:3000/api/users/me',
+          path: process.env.APP_URL + '/api/users/me',
           method: 'get',
         },
       },
