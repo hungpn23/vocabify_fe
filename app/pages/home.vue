@@ -1,8 +1,6 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from '@vueuse/core';
 import type { SelectMenuItem } from '@nuxt/ui';
-import type { UserStats } from '~~/shared/types/deck';
-import { userStatsItems } from '~/utils/constants';
 
 const defaults: DeckUrlParams = {
   page: '1',
@@ -225,6 +223,7 @@ function getDeckProgress(deck: DeckWithStats) {
             class="flex-1"
             icon="i-lucide-search"
             placeholder="Search decks..."
+            autofocus
           />
 
           <USelect v-model="filter" :items="filterItems" value-key="id" />

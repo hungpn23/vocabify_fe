@@ -18,7 +18,7 @@ const items = computed<NavigationMenuItem[]>(() => [
   },
   {
     label: 'Community',
-    to: '#',
+    to: '/community',
   },
   {
     label: 'Forum',
@@ -104,16 +104,7 @@ defineShortcuts({
 
       <div v-else class="flex place-content-between place-items-center gap-1.5">
         <ClientOnly>
-          <UInput
-            v-if="smAndLarger"
-            icon="i-lucide-search"
-            variant="outline"
-            color="neutral"
-            placeholder="Search everything..."
-          />
-
           <UButton
-            v-else
             class="cursor-pointer"
             icon="i-lucide-search"
             variant="ghost"
@@ -136,9 +127,10 @@ defineShortcuts({
           <UDropdownMenu :items="avatarItems" :content="{ align: 'start' }">
             <UAvatar
               v-if="user"
-              class="cursor-pointer rounded-full"
               :src="user.avatarUrl || ''"
+              class="ml-2 cursor-pointer rounded-full"
               icon="i-lucide-user"
+              size="sm"
             />
           </UDropdownMenu>
         </ClientOnly>

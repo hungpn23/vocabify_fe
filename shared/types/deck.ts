@@ -1,6 +1,7 @@
 import type { UUID } from './branded';
 import type { PaginationQuery } from './pagination';
 import { cardSchema, type Card } from './card';
+import type { User } from './user';
 import * as v from 'valibot';
 import type { Visibility } from '~/utils/enums';
 
@@ -20,6 +21,7 @@ export type Deck = {
   description?: string;
   visibility: Visibility;
   openedAt?: string;
+  createdAt: string;
 };
 
 export type DeckStats = {
@@ -36,6 +38,11 @@ export type DeckWithCards = Deck & {
 
 export type DeckWithStats = Deck & {
   stats: DeckStats;
+};
+
+export type PublicDeck = Deck & {
+  totalCards: number;
+  owner: User;
 };
 
 export type UserStats = {
