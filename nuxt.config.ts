@@ -27,21 +27,13 @@ export default defineNuxtConfig({
     globalAppMiddleware: true,
     provider: {
       type: 'local',
-      endpoints: {
-        signIn: { path: '/login', method: 'post' },
-        signOut: { path: '/logout', method: 'post' },
-        signUp: { path: '/register', method: 'post' },
-        getSession: {
-          path: process.env.APP_URL + '/api/users/me',
-          method: 'get',
-        },
-      },
-      token: {
-        signInResponseTokenPointer: '/accessToken',
-        maxAgeInSeconds: 31_536_000, // 1 year
+      token: { signInResponseTokenPointer: '/accessToken' },
+      refresh: {
+        isEnabled: true,
+        refreshOnlyToken: false,
+        token: { maxAgeInSeconds: 1_209_600 }, // 14 days },
       },
       pages: { login: '/login' },
-
       session: {
         dataType: {
           id: 'string',
