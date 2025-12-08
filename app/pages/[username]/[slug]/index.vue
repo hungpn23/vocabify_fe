@@ -374,7 +374,7 @@ function deleteCard(cardId?: UUID) {
                 v-model="state.name"
                 :disabled="!isEditing"
                 :ui="{
-                  base: `${!isEditing ? 'p-0' : ''} text-highlighted text-2xl font-bold text-pretty sm:text-3xl disabled:opacity-100 disabled:cursor-default`,
+                  base: `${!isEditing ? 'p-0' : ''} text-highlighted text-lg font-semibold text-pretty sm:text-xl disabled:opacity-100 disabled:cursor-default`,
                 }"
                 :variant="isEditing ? 'subtle' : 'ghost'"
                 class="w-full"
@@ -404,23 +404,27 @@ function deleteCard(cardId?: UUID) {
 
         <UPageBody class="mt-4">
           <div class="flex flex-col gap-4">
-            <div class="flex place-content-between place-items-center gap-4">
+            <div
+              class="grid place-content-between place-items-center gap-4 sm:flex"
+            >
               <h2
                 class="flex place-items-center gap-1 text-lg font-medium sm:text-xl"
               >
                 Terms ({{ state.cards?.length || 0 }})
 
-                <UIcon
-                  v-if="!isAnswersSaving"
-                  class="text-success size-6"
-                  name="i-lucide-check"
-                />
+                <span v-if="!isEditing" class="inline-flex">
+                  <UIcon
+                    v-if="!isAnswersSaving"
+                    class="text-success size-6"
+                    name="i-lucide-check"
+                  />
 
-                <span
-                  v-else
-                  class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
-                >
-                  Saving...
+                  <span
+                    v-else
+                    class="ml-2 place-self-end-safe text-base font-normal text-current/75 sm:text-lg"
+                  >
+                    Saving...
+                  </span>
                 </span>
               </h2>
 
@@ -470,6 +474,7 @@ function deleteCard(cardId?: UUID) {
               <UCard
                 v-for="(c, index) in state.cards"
                 :key="c.id"
+                :ui="{ body: `${!isEditing ? 'px-2 sm:px-4' : ''}` }"
                 class="bg-elevated"
                 variant="subtle"
               >
@@ -513,7 +518,7 @@ function deleteCard(cardId?: UUID) {
                       :maxrows="10"
                       :disabled="!isEditing"
                       :ui="{
-                        base: 'text-lg sm:text-xl disabled:opacity-100 disabled:cursor-default',
+                        base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
                       }"
                       :variant="isEditing ? 'outline' : 'ghost'"
                       class="w-full"
@@ -538,7 +543,7 @@ function deleteCard(cardId?: UUID) {
                       :maxrows="10"
                       :disabled="!isEditing"
                       :ui="{
-                        base: 'text-lg sm:text-xl disabled:opacity-100 disabled:cursor-default',
+                        base: 'text-base sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
                       }"
                       :variant="isEditing ? 'outline' : 'ghost'"
                       class="w-full"

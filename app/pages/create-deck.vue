@@ -557,7 +557,9 @@ async function onError(event: FormErrorEvent) {
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />
 
-            <span class="font-semibold sm:text-lg"> Add new card </span>
+            <span class="text-base font-semibold sm:text-lg">
+              Add new card
+            </span>
           </div>
         </UCard>
 
@@ -571,7 +573,7 @@ async function onError(event: FormErrorEvent) {
             <div
               class="mb-1 flex place-content-between place-items-center px-0"
             >
-              <p class="font-medium sm:text-lg">{{ index + 1 }}</p>
+              <p class="text-base font-medium sm:text-lg">{{ index + 1 }}</p>
 
               <UButton
                 class="cursor-pointer"
@@ -588,7 +590,7 @@ async function onError(event: FormErrorEvent) {
                   v-model="c.term"
                   :rows="1"
                   :maxrows="10"
-                  :ui="{ base: 'sm:text-lg font-medium' }"
+                  :ui="{ base: 'text-base sm:text-lg font-medium' }"
                   class="w-full"
                   placeholder="Enter your term..."
                   autoresize
@@ -600,7 +602,7 @@ async function onError(event: FormErrorEvent) {
                   v-model="c.definition"
                   :rows="1"
                   :maxrows="10"
-                  :ui="{ base: ' sm:text-lg font-medium' }"
+                  :ui="{ base: 'text-base sm:text-lg font-medium' }"
                   class="w-full"
                   placeholder="Enter your definition..."
                   autoresize
@@ -617,7 +619,9 @@ async function onError(event: FormErrorEvent) {
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />
 
-            <span class="font-semibold sm:text-lg"> Add new card </span>
+            <span class="text-base font-semibold sm:text-lg">
+              Add new card
+            </span>
           </div>
         </UCard>
       </div>
