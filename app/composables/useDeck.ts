@@ -37,10 +37,8 @@ export const useDeck = () => {
     refresh,
     error,
   } = useLazyFetch<DeckWithCards>(() => `/api/decks/${deckId.value}`, {
-    key: `deck-${deckId.value}`,
     headers: { Authorization: token.value || '' },
     server: false,
-    watch: [deckId],
   });
 
   const questions = computed(() => {
