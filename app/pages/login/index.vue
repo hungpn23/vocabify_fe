@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import * as v from 'valibot';
 import type { FormSubmitEvent } from '@nuxt/ui';
 
 definePageMeta({
@@ -15,25 +14,9 @@ useSeoMeta({
   description: 'Login to your account to continue',
 });
 
-const schema = v.object({
-  username: v.pipe(
-    v.string(),
-    v.minLength(6, 'Must be at least 6 characters'),
-    v.maxLength(20, 'Must be at most 20 characters'),
-  ),
-  password: v.message(
-    v.pipe(
-      v.string(),
-      v.regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#$%&*@^]).{8,}$/),
-    ),
-    'Password must contain at least 8 characters, including uppercase, lowercase, number, and special characters.',
-  ),
-});
-
-type Schema = v.InferOutput<typeof schema>;
-
 const toast = useToast();
 const { signIn } = useAuth();
+const config = useRuntimeConfig();
 
 const providers = [
   {
@@ -53,15 +36,12 @@ const providers = [
 ];
 
 function onGoogleLogin() {
-  const config = useRuntimeConfig();
-  const { googleRedirectUri: redirectUri, googleClientId: clientId } =
-    config.public;
-
-  const options = {
-    redirect_uri: redirectUri,
-    client_id: clientId,
+  const options: GoogleQueryParams = {
+    redirect_uri: config.public.googleRedirectUri,
+    client_id: config.public.googleClientId,
     response_type: 'code',
-    scope: 'profile email',
+    scope:
+      'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
     prompt: 'select_account',
   };
 
@@ -70,7 +50,7 @@ function onGoogleLogin() {
   window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams.toString()}`;
 }
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
+function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
   signIn(payload.data, { callbackUrl: '/home' }).catch(
     (error: ErrorResponse) => {
       console.log('Login error:', error);
@@ -84,7 +64,7 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
 <template>
   <UAuthForm
     :fields="logInFields"
-    :schema="schema"
+    :schema="logInSchema"
     :providers="providers"
     title="Better Quizlet"
     @submit.prevent="onSubmit"

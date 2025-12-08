@@ -63,7 +63,7 @@ function toggleColorMode() {
 }
 
 async function onSignOut() {
-  await signOut({ callbackUrl: '/' });
+  await signOut({ callbackUrl: '/login' });
 }
 
 defineShortcuts({

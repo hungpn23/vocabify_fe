@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import * as v from 'valibot';
 import type { FormSubmitEvent } from '@nuxt/ui';
 
 definePageMeta({
@@ -14,34 +13,6 @@ useSeoMeta({
   title: 'Sign up',
   description: 'Create an account to get started',
 });
-
-const schema = v.pipe(
-  v.object({
-    username: v.pipe(
-      v.string(),
-      v.minLength(6, 'Must be at least 6 characters'),
-      v.maxLength(20, 'Must be at most 20 characters'),
-    ),
-    password: v.message(
-      v.pipe(
-        v.string(),
-        v.regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!#$%&*@^]).{8,}$/),
-      ),
-      'Password must contain at least 8 characters, including uppercase, lowercase, number, and special characters.',
-    ),
-    confirmPassword: v.pipe(v.string()),
-  }),
-  v.forward(
-    v.partialCheck(
-      [['password'], ['confirmPassword']],
-      (input) => input.password === input.confirmPassword,
-      'Passwords do not match',
-    ),
-    ['confirmPassword'],
-  ),
-);
-
-type Schema = v.InferOutput<typeof schema>;
 
 const toast = useToast();
 const { signUp } = useAuth();
@@ -63,7 +34,7 @@ const providers = [
   },
 ];
 
-function onSubmit(payload: FormSubmitEvent<Schema>) {
+function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
   signUp(payload.data, { callbackUrl: '/home' }).catch(
     (error: ErrorResponse) => {
       console.log('Login error:', error);
@@ -77,7 +48,7 @@ function onSubmit(payload: FormSubmitEvent<Schema>) {
 <template>
   <UAuthForm
     :fields="signUpFields"
-    :schema="schema"
+    :schema="signUpSchema"
     :providers="providers"
     :submit="{ label: 'Create account' }"
     title="Create an account"
