@@ -15,6 +15,8 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@sidebase/nuxt-auth',
     '@nuxt/content',
+    '@pinia/nuxt',
+    'pinia-plugin-persistedstate/nuxt',
   ],
 
   devtools: {
