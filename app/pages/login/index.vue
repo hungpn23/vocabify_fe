@@ -51,13 +51,9 @@ function onGoogleLogin() {
 }
 
 function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
-  signIn(payload.data, { callbackUrl: '/home' }).catch(
-    (error: ErrorResponse) => {
-      console.log('Login error:', error);
-
-      toast.add({ title: 'Login failed' });
-    },
-  );
+  signIn(payload.data, { callbackUrl: '/home' }).catch((_: ErrorResponse) => {
+    toast.add({ title: 'Login failed' });
+  });
 }
 </script>
 

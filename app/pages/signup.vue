@@ -35,13 +35,9 @@ const providers = [
 ];
 
 function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
-  signUp(payload.data, { callbackUrl: '/home' }).catch(
-    (error: ErrorResponse) => {
-      console.log('Login error:', error);
-
-      toast.add({ title: 'Login failed' });
-    },
-  );
+  signUp(payload.data, { callbackUrl: '/home' }).catch((_: ErrorResponse) => {
+    toast.add({ title: 'Login failed' });
+  });
 }
 </script>
 

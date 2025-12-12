@@ -41,7 +41,7 @@ onMounted(async () => {
       await navigateTo('/home');
     })
     .catch(async (error: ErrorResponse) => {
-      console.debug('Exchange token error:', error);
+      console.error('Exchange token error:', error);
 
       toast.add({
         title: 'Login Failed',
