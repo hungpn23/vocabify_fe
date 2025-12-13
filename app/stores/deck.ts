@@ -46,7 +46,9 @@ export const useDeckStore = defineStore('deck', () => {
   // --- Watchers ---
   watchImmediate(
     () => route.fullPath,
-    async () => await execute(),
+    async () => {
+      if (deckId.value) await execute();
+    },
   );
 
   watch(status, () => {
@@ -91,6 +93,10 @@ export const useDeckStore = defineStore('deck', () => {
     isIgnoreDate.value = checked;
   }
 
+  function toggleIgnoreDate() {
+    isIgnoreDate.value = !isIgnoreDate.value;
+  }
+
   return {
     // State
     deck: computed(() => deck.value),
@@ -107,6 +113,7 @@ export const useDeckStore = defineStore('deck', () => {
     refetch,
     restartDeck,
     updateIgnoreDate,
+    toggleIgnoreDate,
   };
 });
 

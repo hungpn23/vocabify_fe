@@ -27,17 +27,6 @@ export type Answer = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 export type CardToSave = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
-export type StudySession = {
-  currentQuestion: Card | undefined;
-  queue: Card[];
-  answers: Answer[];
-  savedAnswers: Answer[];
-  retryQueue: Card[];
-  totalQuestions: number;
-  knownCount: number;
-  skippedCount: number;
-};
-
 export type FlashcardSession = {
   currentCard?: Card | null;
   cardsToSave: CardToSave[];
@@ -66,6 +55,24 @@ export type LearnState = {
   queue: LearnQuestion[];
   retryQueue: LearnQuestion[];
   answers: Answer[];
+};
+
+export type LearnSession = {
+  isSavingAnswers: boolean;
+  correctCount: number;
+  incorrectCount: number;
+  cardsToSave: CardToSave[];
+  retryQueue: LearnQuestion[];
+  studyQueue: LearnQuestion[];
+  totalQuestions: number;
+  currentQuestion?: LearnQuestion;
+};
+
+export type LearnQuestionState = {
+  userAnswer: string;
+  userChoiceIndex: number;
+  isInReview: boolean;
+  isCorrect?: boolean;
 };
 
 export type LearnSetting = {

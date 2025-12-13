@@ -1,184 +1,161 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from '@vueuse/core';
-import type { LearnSetting, LearnState } from '~~/shared/types/card';
 
 const { token } = useAuth();
-const route = useRoute();
 const breakpoints = useBreakpoints(breakpointsTailwind);
 const smAndLarger = breakpoints.greaterOrEqual('sm');
+const store = useDeckStore();
 
-const throttledOnAnswerSubmitted = useThrottleFn(onAnswerSubmitted, 500);
-const throttledHandleSubmittedAnswer = useThrottleFn(
-  handleSubmittedAnswer,
-  500,
-);
-
-const isCorrect = ref<boolean | undefined>(undefined);
-const isInReview = ref(false);
-const isAnswerSaving = ref(false);
-const isIgnoreDate = ref(false);
-const isSettingOpen = ref(false);
-const correctCount = ref(0);
-const incorrectCount = ref(0);
-const userAnswer = ref('');
-const userChoiceIndex = ref<number>(-1);
-const question = ref<LearnQuestion | undefined>(undefined);
+const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
+const throttledNextAnswer = useThrottleFn(nextAnswer, 500);
 
 const inputElement = useTemplateRef('input');
 
-const learn = reactive<LearnState>({
-  totalQuestions: 0,
-  queue: [],
+const isSettingOpen = ref(false);
+
+const session = reactive<LearnSession>({
+  currentQuestion: undefined,
+  cardsToSave: [],
+  studyQueue: [],
   retryQueue: [],
-  answers: [],
+  totalQuestions: 0,
+  correctCount: 0,
+  incorrectCount: 0,
+  isSavingAnswers: false,
+});
+
+const state = reactive<LearnQuestionState>({
+  userAnswer: '',
+  userChoiceIndex: -1,
+  isInReview: false,
+  isCorrect: undefined,
 });
 
 const setting = reactive<LearnSetting>({
   showCorrectAnswer: true,
-  types: ['written'],
+  types: ['written', 'multiple_choices'],
   direction: 'term_to_def',
 });
 let snapshotSetting = '';
 
-const isIncorrect = computed(() => isCorrect.value === false);
+const isIncorrect = computed(() => state.isCorrect === false);
 
 const progress = computed(() => {
-  if (!learn.totalQuestions) return 0;
-  return (correctCount.value / learn.totalQuestions) * 100;
-});
-
-const deckId = computed(() => route.query.deckId as string);
-
-const deckSlug = computed(() => {
-  const slug = route.params.slug;
-
-  return Array.isArray(slug) ? slug[0] : slug;
-});
-
-const username = computed(() => {
-  const n = route.params.username;
-
-  return Array.isArray(n) ? n[0] : n;
-});
-
-const {
-  data: deck,
-  status,
-  refresh,
-} = useLazyFetch<DeckWithCards>(`/api/decks/${deckId.value}`, {
-  headers: { Authorization: token.value || '' },
-  server: false,
-});
-
-watch(deck, (newDeck) => {
-  if (newDeck && newDeck.cards.length > 0) {
-    isAnswerSaving.value = false;
-    isIgnoreDate.value = false;
-    isSettingOpen.value = false;
-    correctCount.value = 0;
-    incorrectCount.value = 0;
-    learn.answers = [];
-    learn.retryQueue = [];
-
-    resetQuestionState();
-
-    learn.queue = generateQuestions<LearnQuestion>({
-      cards: getCards(newDeck.cards, isIgnoreDate.value),
-      types: setting.types,
-      dir: setting.direction,
-      answerPool: newDeck.cards.map((c) => ({
-        id: c.id,
-        term: c.term,
-        definition: c.definition,
-      })),
-    });
-    learn.totalQuestions = learn.queue.length;
-    question.value = learn.queue.shift();
-  }
+  if (!session.totalQuestions) return 0;
+  return (session.correctCount / session.totalQuestions) * 100;
 });
 
 watch(
+  () => store.deck?.cards,
+  (newCards) => {
+    if (newCards && newCards.length > 0) {
+      isSettingOpen.value = false;
+      resetQuestionState();
+
+      session.isSavingAnswers = false;
+      session.correctCount = 0;
+      session.incorrectCount = 0;
+      session.cardsToSave = [];
+      session.retryQueue = [];
+
+      session.studyQueue = generateQuestions<LearnQuestion>({
+        cards: getCards(newCards, store.isIgnoreDate),
+        types: setting.types,
+        dir: setting.direction,
+        answerPool: newCards.map((c) => ({
+          id: c.id,
+          term: c.term,
+          definition: c.definition,
+        })),
+      });
+      session.totalQuestions = session.studyQueue.length;
+      session.currentQuestion = session.studyQueue.shift();
+    }
+  },
+);
+
+watchDeep(
   () => setting.types,
   (newTypes) => {
     if (!newTypes.length) setting.types = ['multiple_choices'];
   },
 );
 
-watchDebounced(learn, saveAnswers, {
+watchDebounced(() => session.cardsToSave, saveAnswers, {
   debounce: 1000,
   deep: true,
 });
 
-function onAnswerSubmitted(userAnswer: number | string) {
-  const q = question.value;
-  if (!q || isInReview.value) return;
+function submitAnswer(userAnswer: number | string) {
+  const q = session.currentQuestion;
+  if (!q || state.isInReview) return;
 
   if (q.type === 'multiple_choices' && typeof userAnswer === 'number') {
-    userChoiceIndex.value = userAnswer;
-    isCorrect.value = userAnswer === q.correctChoiceIndex;
+    state.userChoiceIndex = userAnswer;
+    state.isCorrect = userAnswer === q.correctChoiceIndex;
   } else if (q.type === 'written' && typeof userAnswer === 'string') {
     const inputRef = inputElement.value?.inputRef;
     if (inputRef) inputRef.blur();
 
-    isCorrect.value =
+    state.isCorrect =
       userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
   } else {
     return;
   }
 
-  isInReview.value = true;
+  state.isInReview = true;
 
-  if (isCorrect.value) {
-    correctCount.value++;
+  if (state.isCorrect) {
+    session.correctCount++;
 
     setTimeout(() => {
-      throttledHandleSubmittedAnswer(true, q);
+      throttledNextAnswer(true, q);
     }, 500);
   } else {
-    incorrectCount.value++;
+    session.incorrectCount++;
 
     if (setting.showCorrectAnswer) return;
 
-    throttledHandleSubmittedAnswer(false, q);
+    throttledNextAnswer(false, q);
   }
 }
 
-function handleSubmittedAnswer(isCorrect?: boolean, q?: LearnQuestion) {
+function nextAnswer(isCorrect?: boolean, q?: LearnQuestion) {
   if (!q || isCorrect === undefined) return;
 
-  isAnswerSaving.value = true;
+  session.isSavingAnswers = true;
 
-  const updated = Object.assign({}, updateCard(q, isCorrect));
+  const updated = updateCard(q, isCorrect);
 
-  if (isIncorrect.value) learn.retryQueue.push(updated);
+  if (isIncorrect.value) session.retryQueue.push(updated);
 
   // trigger saveAnswers in watchDebounced
-  const index = learn.answers.findIndex((a) => a.id === updated.id);
+  const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
   if (index !== -1) {
-    learn.answers[index] = updated;
+    session.cardsToSave[index] = updated;
   } else {
-    learn.answers.push(updated);
+    session.cardsToSave.push(updated);
   }
 
-  if (!learn.queue.length) {
-    if (!learn.retryQueue.length) {
+  if (!session.studyQueue.length) {
+    if (!session.retryQueue.length) {
       resetQuestionState();
-      question.value = undefined;
+      session.currentQuestion = undefined;
     }
 
-    learn.queue = learn.retryQueue;
-    learn.retryQueue = [];
+    session.studyQueue = session.retryQueue;
+    session.retryQueue = [];
   }
 
   resetQuestionState();
-  question.value = learn.queue.shift();
+  session.currentQuestion = session.studyQueue.shift();
 }
 
 function resetQuestionState() {
-  isCorrect.value = undefined;
-  isInReview.value = false;
-  userAnswer.value = '';
-  userChoiceIndex.value = -1;
+  state.isCorrect = undefined;
+  state.isInReview = false;
+  state.userAnswer = '';
+  state.userChoiceIndex = -1;
 
   const inputRef = inputElement.value?.inputRef;
   if (inputRef) {
@@ -189,67 +166,51 @@ function resetQuestionState() {
 }
 
 async function saveAnswers() {
-  const answersToSave = [...learn.answers];
+  const answersToSave = [...session.cardsToSave];
   if (answersToSave.length === 0) return;
 
-  $fetch(`/api/study/save-answer/${deckId.value}`, {
+  $fetch(`/api/study/save-answer/${store.deckId}`, {
     method: 'POST',
     headers: { Authorization: token.value || '' },
     body: { answers: answersToSave },
   })
-    .then(() => (learn.answers = []))
+    .then(() => (session.cardsToSave = []))
     .catch((error: ErrorResponse) => {
       console.error('Save answers fail!', error.data);
     })
-    .finally(() => (isAnswerSaving.value = false));
-}
-
-async function onRestart() {
-  $fetch(`/api/decks/restart/${deckId.value}`, {
-    method: 'POST',
-    headers: {
-      Authorization: token.value || '',
-    },
-  }).then(async () => {
-    isIgnoreDate.value = false;
-    await refresh();
-  });
-}
-
-async function onIgnoreDate() {
-  isIgnoreDate.value = true;
-  await refresh();
+    .finally(() => (session.isSavingAnswers = false));
 }
 
 async function onSettingClosed() {
   if (JSON.stringify(setting) === snapshotSetting) return;
 
   snapshotSetting = '';
-  await refresh();
+  await store.refetch();
 }
 
 function handleChoiceShortcut(index: number) {
   if (
     isIncorrect.value &&
-    isInReview.value &&
-    question.value?.correctChoiceIndex === index
+    state.isInReview &&
+    session.currentQuestion?.correctChoiceIndex === index
   ) {
-    throttledHandleSubmittedAnswer(isCorrect.value, question.value);
+    throttledNextAnswer(state.isCorrect, session.currentQuestion);
   } else {
-    throttledOnAnswerSubmitted(index);
+    throttledSubmitAnswer(index);
   }
 }
 
 function getChoiceBtnClass(cIndex: number) {
-  if (!question.value) return '';
+  if (!session.currentQuestion) return '';
 
-  const isThisSelected = userChoiceIndex.value === cIndex;
-  const isThisChoiceCorrect = question.value.correctChoiceIndex === cIndex;
+  const isThisSelected = state.userChoiceIndex === cIndex;
+  const isThisChoiceCorrect =
+    session.currentQuestion.correctChoiceIndex === cIndex;
 
   const successClass =
     'border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102';
 
-  if (isInReview.value) {
+  if (state.isInReview) {
     if (isThisSelected) {
       if (isThisChoiceCorrect) {
         return successClass;
@@ -267,9 +228,9 @@ function getChoiceBtnClass(cIndex: number) {
 }
 
 function getWrittenInputClass() {
-  if (!isInReview.value) return '';
+  if (!state.isInReview) return '';
 
-  if (isCorrect.value) {
+  if (state.isCorrect) {
     return 'border-success';
   }
 
@@ -277,12 +238,12 @@ function getWrittenInputClass() {
 }
 
 function getChoiceDisabledState(cIndex: number) {
-  if (!isInReview.value) return false;
+  if (!state.isInReview) return false;
 
-  const q = question.value;
+  const q = session.currentQuestion;
   if (!q) return true;
 
-  const isThisSelected = userChoiceIndex.value === cIndex;
+  const isThisSelected = state.userChoiceIndex === cIndex;
   const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
 
   if (isThisSelected) {
@@ -297,7 +258,7 @@ function getChoiceDisabledState(cIndex: number) {
 }
 
 defineShortcuts({
-  ' ': () => throttledHandleSubmittedAnswer(isCorrect.value, question.value),
+  ' ': () => throttledNextAnswer(state.isCorrect, session.currentQuestion),
   '1': () => handleChoiceShortcut(0),
   '2': () => handleChoiceShortcut(1),
   '3': () => handleChoiceShortcut(2),
@@ -306,12 +267,14 @@ defineShortcuts({
 </script>
 
 <template>
-  <SkeletonLearnPage v-if="status === 'idle' || status === 'pending'" />
+  <SkeletonLearnPage
+    v-if="store.status === 'idle' || store.status === 'pending'"
+  />
 
   <UContainer v-else>
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
-        :to="`/${username}/${deckSlug}/flashcards?deckId=${deckId}`"
+        :to="`/${store.username}/${store.slug}/flashcards?deckId=${store.deckId}`"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
@@ -319,7 +282,7 @@ defineShortcuts({
       />
 
       <UButton
-        :to="`/${username}/${deckSlug}/test?deckId=${deckId}`"
+        :to="`/${store.username}/${store.slug}/test?deckId=${store.deckId}`"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         trailing-icon="i-lucide-move-right"
@@ -327,14 +290,18 @@ defineShortcuts({
       />
     </div>
 
-    <div v-if="question" class="mb-8 flex w-full flex-col gap-2">
+    <div
+      v-if="session.currentQuestion"
+      v-auto-animate
+      class="mb-8 flex w-full flex-col gap-2"
+    >
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >
-        {{ deck?.name || '' }}
+        {{ store.deck?.name }}
 
         <UIcon
-          v-if="!isAnswerSaving"
+          v-if="!session.isSavingAnswers"
           name="i-lucide-check"
           class="text-success ml-2 size-5"
         />
@@ -350,7 +317,7 @@ defineShortcuts({
       <div class="flex place-content-between place-items-center">
         <div class="flex place-items-center gap-2">
           <UBadge
-            :label="incorrectCount"
+            :label="session.incorrectCount"
             class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
             variant="subtle"
             color="error"
@@ -359,13 +326,13 @@ defineShortcuts({
           <span class="text-error sm:text-md text-sm">Incorrect</span>
         </div>
 
-        <div>{{ `${correctCount} / ${learn.totalQuestions}` }}</div>
+        <div>{{ `${session.correctCount} / ${session.totalQuestions}` }}</div>
 
         <div class="flex place-items-center gap-2">
           <span class="text-success sm:text-md text-sm">Correct</span>
 
           <UBadge
-            :label="correctCount"
+            :label="session.correctCount"
             class="h-6 w-6 shrink-0 place-content-center rounded-full px-2"
             variant="subtle"
             color="success"
@@ -391,7 +358,11 @@ defineShortcuts({
               variant="soft"
               color="neutral"
             />
-            {{ question.direction === 'term_to_def' ? 'Term' : 'Definition' }}
+            {{
+              session.currentQuestion.direction === 'term_to_def'
+                ? 'Term'
+                : 'Definition'
+            }}
           </span>
 
           <UButton
@@ -405,13 +376,13 @@ defineShortcuts({
         </div>
 
         <div class="text-xl font-medium sm:text-2xl">
-          {{ question.question }}
+          {{ session.currentQuestion.question }}
         </div>
 
         <div class="mt-2 flex w-full flex-col gap-2">
           <span class="font-medium">
             {{
-              question.type === 'multiple_choices'
+              session.currentQuestion.type === 'multiple_choices'
                 ? 'Choose an answer'
                 : 'Type your answer'
             }}
@@ -419,11 +390,11 @@ defineShortcuts({
 
           <!-- Multiple Choices Answer -->
           <div
-            v-if="question.type === 'multiple_choices'"
+            v-if="session.currentQuestion.type === 'multiple_choices'"
             class="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4"
           >
             <button
-              v-for="(choice, cIndex) in question.choices"
+              v-for="(choice, cIndex) in session.currentQuestion.choices"
               :key="cIndex"
               :class="`border-accented bg-default hover:text-primary hover:border-primary hover:bg-primary/25 flex cursor-pointer place-items-center gap-2 rounded-md border-2 p-3 transition-all hover:shadow-lg active:scale-98 disabled:pointer-events-none ${getChoiceBtnClass(cIndex)}`"
               :disabled="getChoiceDisabledState(cIndex)"
@@ -446,15 +417,15 @@ defineShortcuts({
           <div v-else class="flex w-full flex-col gap-2">
             <UInput
               ref="input"
-              v-model="userAnswer"
+              v-model="state.userAnswer"
               :ui="{
                 base: `text-lg sm:text-xl transition-all border-2 border-default ring-0 ${getWrittenInputClass()}`,
               }"
-              :disabled="isInReview"
+              :disabled="state.isInReview"
               variant="outline"
               color="neutral"
               autofocus
-              @keydown.enter="throttledOnAnswerSubmitted(userAnswer)"
+              @keydown.enter="throttledSubmitAnswer(state.userAnswer)"
             />
 
             <Transition>
@@ -463,7 +434,7 @@ defineShortcuts({
                 :ui="{
                   base: `text-lg sm:text-xl transition-all border-2 border-dashed border-success ring-0`,
                 }"
-                :default-value="question.correctAnswer"
+                :default-value="session.currentQuestion.correctAnswer"
                 disabled
               />
             </Transition>
@@ -480,11 +451,11 @@ defineShortcuts({
             </UButton>
 
             <UButton
-              v-if="question.type === 'written'"
-              :disabled="!userAnswer"
+              v-if="session.currentQuestion.type === 'written'"
+              :disabled="!state.userAnswer"
               class="cursor-pointer font-medium"
               size="lg"
-              @click="throttledOnAnswerSubmitted(userAnswer)"
+              @click="throttledSubmitAnswer(state.userAnswer)"
             >
               Answer
             </UButton>
@@ -504,13 +475,13 @@ defineShortcuts({
         <div />
 
         <div
-          v-if="isInReview && setting.showCorrectAnswer && isIncorrect"
+          v-if="state.isInReview && setting.showCorrectAnswer && isIncorrect"
           class="place-self-center font-semibold"
         >
           Press <AppKbd label="Space" />
-          <span v-if="question.correctChoiceIndex">
+          <span v-if="session.currentQuestion.correctChoiceIndex">
             or
-            <AppKbd :label="question.correctChoiceIndex + 1" />
+            <AppKbd :label="session.currentQuestion.correctChoiceIndex + 1" />
           </span>
           to continue
         </div>
@@ -518,6 +489,29 @@ defineShortcuts({
         <div v-else />
 
         <div class="flex place-items-center place-self-end">
+          <!-- Options -->
+          <UTooltip :delay-duration="200" text="Ignore review dates">
+            <UButton
+              :icon="`i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`"
+              class="cursor-pointer"
+              variant="ghost"
+              color="neutral"
+              size="lg"
+              @click="store.toggleIgnoreDate"
+            />
+          </UTooltip>
+
+          <UTooltip :delay-duration="200" text="Restart deck progress">
+            <UButton
+              class="cursor-pointer"
+              icon="i-lucide-refresh-cw"
+              variant="ghost"
+              color="neutral"
+              size="lg"
+              @click="store.restartDeck"
+            />
+          </UTooltip>
+
           <!-- Learn Settings -->
           <UModal
             v-model:open="isSettingOpen"
@@ -602,6 +596,7 @@ defineShortcuts({
 
     <UEmpty
       v-else
+      v-auto-animate
       :actions="[
         {
           to: '/home',
@@ -617,7 +612,7 @@ defineShortcuts({
           color: 'error',
           variant: 'outline',
           class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: onRestart,
+          onClick: store.restartDeck,
         },
         {
           icon: 'i-lucide-fast-forward',
@@ -625,7 +620,7 @@ defineShortcuts({
           color: 'neutral',
           variant: 'subtle',
           class: 'cursor-pointer hover:scale-102 hover:shadow',
-          onClick: onIgnoreDate,
+          onClick: () => store.updateIgnoreDate(true),
         },
       ]"
       variant="naked"
