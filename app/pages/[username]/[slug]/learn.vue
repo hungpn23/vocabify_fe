@@ -275,26 +275,22 @@ defineShortcuts({
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/${store.username}/${store.slug}/flashcards?deckId=${store.deckId}`"
+        :label="smAndLarger ? 'Back to Flashcards' : 'Flashcards'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
-        label="Back to Flashcards"
       />
 
       <UButton
         :to="`/${store.username}/${store.slug}/test?deckId=${store.deckId}`"
+        :label="smAndLarger ? 'Go to Test' : 'Test'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         trailing-icon="i-lucide-move-right"
-        label="Go to Test"
       />
     </div>
 
-    <div
-      v-if="session.currentQuestion"
-      v-auto-animate
-      class="mb-8 flex w-full flex-col gap-2"
-    >
+    <div v-if="session.currentQuestion" class="mb-8 flex w-full flex-col gap-2">
       <h1
         class="mb-2 flex place-items-center place-self-center text-lg font-semibold sm:text-xl"
       >
@@ -353,7 +349,7 @@ defineShortcuts({
         <div class="flex w-full place-content-between place-items-center">
           <span class="flex place-items-center gap-1 font-medium">
             <UButton
-              class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2"
+              class="hover:text-primary cursor-pointer rounded-full bg-inherit p-2 pl-0"
               icon="i-lucide-volume-2"
               variant="soft"
               color="neutral"
@@ -366,7 +362,7 @@ defineShortcuts({
           </span>
 
           <UButton
-            class="cursor-pointer"
+            class="cursor-pointer pr-0"
             icon="i-lucide-lightbulb"
             :variant="smAndLarger ? 'soft' : 'ghost'"
             color="neutral"
@@ -471,11 +467,18 @@ defineShortcuts({
         </template>
       </UCard>
 
+      <USeparator />
+
       <div class="grid grid-cols-3 gap-2">
         <div />
 
         <div
-          v-if="state.isInReview && setting.showCorrectAnswer && isIncorrect"
+          v-if="
+            state.isInReview &&
+            setting.showCorrectAnswer &&
+            isIncorrect &&
+            smAndLarger
+          "
           class="place-self-center font-semibold"
         >
           Press <AppKbd label="Space" />
@@ -596,7 +599,6 @@ defineShortcuts({
 
     <UEmpty
       v-else
-      v-auto-animate
       :actions="[
         {
           to: '/home',

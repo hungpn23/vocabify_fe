@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import type { DropdownMenuItem } from '@nuxt/ui';
+import { breakpointsTailwind } from '@vueuse/core';
 
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const smAndLarger = breakpoints.greaterOrEqual('sm');
 const store = useDeckStore();
 
 const { session, progress, handleAnswer } = useFlashcardSession();
@@ -55,18 +58,18 @@ defineShortcuts({
     <div class="flex place-content-between place-items-center gap-2">
       <UButton
         :to="`/${store.username}/${store.slug}?deckId=${store.deckId}`"
+        :label="smAndLarger ? 'Back to Home' : 'Home'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         icon="i-lucide-move-left"
-        label="Go back"
       />
 
       <UButton
         :to="`/${store.username}/${store.slug}/learn?deckId=${store.deckId}`"
+        :label="smAndLarger ? 'Go to Learn' : 'Learn'"
         class="mt-2 cursor-pointer px-0 text-base"
         variant="link"
         trailing-icon="i-lucide-move-right"
-        label="Go to Learn"
       />
     </div>
 

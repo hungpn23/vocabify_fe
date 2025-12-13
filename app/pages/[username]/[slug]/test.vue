@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { UCard } from '#components';
 import { breakpointsTailwind } from '@vueuse/core';
-import type { TestQuestion, TestSetting } from '~~/shared/types/card';
 
 const { token } = useAuth();
 const route = useRoute();
