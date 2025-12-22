@@ -163,10 +163,11 @@ function getDeckProgress(deck: DeckWithStats) {
             v-for="d in paginated.data"
             :key="d.id"
             :to="`/library/${d.slug}?deckId=${d.id}`"
+            custom
           >
             <UCard
               :ui="{ body: 'space-y-2' }"
-              class="hover:bg-elevated shadow-md transition-all hover:scale-101"
+              class="shadow-md hover:translate-x-3 transition-all"
               variant="subtle"
             >
               <!-- Title -->

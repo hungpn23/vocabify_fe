@@ -1,8 +1,12 @@
 <script lang="ts" setup>
 import { formatTimeAgo } from '@vueuse/core';
 
+definePageMeta({
+  auth: false,
+});
+
 const toast = useToast();
-const { token } = useAuth();
+const { data: user } = useAuth();
 const { page, limit, filter, search, filterItems, query } = useDeckSearch();
 
 const totalRecords = computed(
@@ -13,10 +17,11 @@ const {
   data: paginated,
   error,
   status,
-} = useLazyFetch<Paginated<PublicDeck>, ErrorResponse>('/api/decks/public', {
-  query,
-  headers: { Authorization: token.value || '' },
-  server: false,
+} = await useFetch<Paginated<PublicDeck>, ErrorResponse>('/api/decks/shared', {
+  query: {
+    ...query.value,
+    userId: user.value?.id,
+  },
 });
 
 watch(error, (newErr) => {
@@ -25,9 +30,7 @@ watch(error, (newErr) => {
 </script>
 
 <template>
-  <SkeletonCommunityPage v-if="status === 'idle' || status === 'pending'" />
-
-  <UContainer v-else class="mt-4 space-y-2">
+  <UContainer class="mt-4 space-y-2">
     <h1 class="mb-4 text-xl font-medium sm:text-2xl">
       Browse decks shared by community
     </h1>
@@ -46,18 +49,21 @@ watch(error, (newErr) => {
 
     <div
       v-if="paginated && paginated.metadata.totalRecords > 0"
-      class="flex flex-col gap-3"
+      class="flex flex-col gap-4"
     >
       <TransitionGroup name="list" appear>
         <NuxtLink
           v-for="d in paginated.data"
           :key="d.id"
+          v-slot="{ navigate }"
           :to="`/shared/${d.owner.username}/${d.slug}?deckId=${d.id}`"
+          custom
         >
           <UCard
             :ui="{ body: 'space-y-4' }"
-            class="hover:bg-elevated shadow-md transition-all hover:scale-101"
+            class="shadow-md transition-all hover:translate-x-3"
             variant="subtle"
+            @click="navigate"
           >
             <div
               class="flex flex-col sm:flex-row sm:place-items-center sm:gap-8"
@@ -87,7 +93,7 @@ watch(error, (newErr) => {
 
                 <UTooltip :delay-duration="200" text="Views">
                   <UBadge
-                    label="1"
+                    :label="d.cloneCount"
                     icon="i-lucide-eye"
                     variant="outline"
                     color="neutral"
@@ -96,7 +102,7 @@ watch(error, (newErr) => {
 
                 <UTooltip :delay-duration="200" text="Cloned times">
                   <UBadge
-                    label="318"
+                    :label="d.cloneCount"
                     icon="i-lucide-git-fork"
                     variant="outline"
                     color="neutral"
@@ -105,32 +111,41 @@ watch(error, (newErr) => {
               </div>
             </div>
 
-            <UButton
-              class="w-fit cursor-pointer p-0"
-              variant="ghost"
-              color="neutral"
-            >
-              <div class="flex place-items-center gap-2">
-                <UAvatar
-                  :ui="{ fallback: 'uppercase' }"
-                  :src="d.owner.avatarUrl || ''"
-                  :alt="d.owner.username"
-                />
+            <div class="flex place-content-between place-items-center">
+              <UButton
+                class="w-fit p-0 hover:bg-inherit active:bg-inherit"
+                variant="ghost"
+                color="neutral"
+              >
+                <div class="flex place-items-center gap-2">
+                  <UAvatar
+                    :ui="{ fallback: 'uppercase' }"
+                    :src="d.owner.avatarUrl || ''"
+                    :alt="d.owner.username"
+                  />
 
-                <div class="flex flex-col">
-                  <NuxtLink
-                    :to="`/shared/${d.owner.username}`"
-                    class="cursor-default place-self-start text-sm font-medium hover:underline sm:text-base"
-                  >
-                    {{ d.owner.username }}
-                  </NuxtLink>
+                  <div class="flex flex-col">
+                    <NuxtLink
+                      :to="`/shared/${d.owner.username}`"
+                      class="cursor-default place-self-start text-sm font-medium hover:underline sm:text-base"
+                    >
+                      {{ d.owner.username }}
+                    </NuxtLink>
 
-                  <p class="text-muted text-sm font-normal">
-                    {{ `Created ${formatTimeAgo(new Date(d.createdAt))}` }}
-                  </p>
+                    <p class="text-muted text-sm font-normal">
+                      {{ `Created ${formatTimeAgo(new Date(d.createdAt))}` }}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </UButton>
+              </UButton>
+
+              <UButton
+                label="Clone"
+                icon="i-lucide-git-fork"
+                variant="subtle"
+                @click.stop="console.log('Method not implemented')"
+              />
+            </div>
           </UCard>
         </NuxtLink>
       </TransitionGroup>

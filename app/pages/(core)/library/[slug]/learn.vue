@@ -550,7 +550,7 @@ defineShortcuts({
               size="lg"
               @click="isSettingOpen = true"
             />
-
+            
             <template #title>
               <h2 class="text-xl font-semibold sm:text-2xl">Learn settings</h2>
             </template>

@@ -20,6 +20,8 @@ export type Deck = {
   slug: string;
   description?: string;
   visibility: Visibility;
+  cloneCount: number;
+  clonedFrom?: Deck | null;
   openedAt?: string;
   createdAt: string;
 };
