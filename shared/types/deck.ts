@@ -1,7 +1,7 @@
 import type { Visibility } from '~/utils/enums';
 import type { UUID } from './branded';
-import { cardSchema, type Card } from './card';
-import type { User } from './user';
+import type { Owner } from './user';
+import { cardSchema, type Card, type PreviewCard } from './card';
 import * as v from 'valibot';
 
 export const updateDeckSchema = v.object({
@@ -48,7 +48,8 @@ export type GetManyRes = Pick<
 // --- SHARED ---
 export type GetSharedOneRes = Pick<Deck, 'id' | 'name' | 'description'> & {
   totalCards: number;
-  cards: Pick<Card, 'term' | 'definition'>[];
+  owner: Owner;
+  cards: PreviewCard[];
 };
 
 export type GetSharedManyRes = Pick<
@@ -56,7 +57,7 @@ export type GetSharedManyRes = Pick<
   'id' | 'name' | 'slug' | 'visibility' | 'learnerCount' | 'createdAt'
 > & {
   totalCards: number;
-  owner: Pick<User, 'id' | 'username' | 'avatarUrl'>;
+  owner: Owner;
 };
 
 // --- SEARCH ---

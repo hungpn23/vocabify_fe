@@ -1,36 +1,23 @@
 <script setup lang="ts">
+import { breakpointsTailwind } from '@vueuse/core';
+
 definePageMeta({
   auth: false,
 });
 
 const route = useRoute();
+const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
 
-const studyOptions = computed(() => [
-  {
-    label: 'Flashcards',
-    icon: 'i-lucide-gallery-horizontal-end',
-    // to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Learn',
-    icon: 'i-lucide-notebook-pen',
-    // to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Test',
-    icon: 'i-lucide-flask-conical',
-    // to: `/library/${store.slug}/test?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Coming soon',
-    icon: '',
-    to: `#`,
-  },
-]);
+const breakpoints = useBreakpoints(breakpointsTailwind);
+const smAndLarger = breakpoints.greaterOrEqual('sm');
 
-const { data: _deck, error } = await useFetch<undefined, ErrorResponse>(
+const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
+
+const isFlipped = ref(false);
+
+const { data: deck, error } = await useFetch<GetSharedOneRes, ErrorResponse>(
   `/api/decks/shared/${route.query.deckId}`,
   {
     headers: { Authorization: token.value || '' },
@@ -41,6 +28,36 @@ watchImmediate(error, (newErr) => {
   if (newErr) {
     toast.add({ title: newErr.data?.message });
   }
+});
+
+async function onAddToLibrary(deckId?: UUID) {
+  if (!deckId) return;
+
+  if (!token.value) {
+    toast.add({ title: 'Please login first before adding deck to library' });
+    router.push('/login');
+    return;
+  }
+
+  $fetch(`/api/decks/clone/${deckId}`, {
+    method: 'POST',
+    headers: { Authorization: token.value || '' },
+  })
+    .then(() => {
+      toast.add({ title: 'Deck added to library' });
+      router.push('/library');
+    })
+    .catch((err: ErrorResponse) => {
+      toast.add({ title: err.data?.message });
+    });
+}
+
+function toggleFlip() {
+  isFlipped.value = !isFlipped.value;
+}
+
+defineShortcuts({
+  ' ': throttledToggleFlip,
 });
 </script>
 
@@ -55,31 +72,32 @@ watchImmediate(error, (newErr) => {
     />
 
     <h1 class="text-lg font-semibold sm:text-xl">
-      Cillum amet excepteur cupidatat
+      {{ deck?.name }}
     </h1>
 
-    <p v-if="true" class="text-muted">
-      Reprehenderit aliqua nostrud eu tempor.
+    <p class="text-muted">
+      {{ deck?.description }}
     </p>
 
-    <div class="my-4 flex flex-col-reverse gap-4 lg:flex-col">
-      <div class="grid grid-cols-2 gap-2 lg:grid-cols-4">
-        <UButton
-          v-for="{ label, icon, to } in studyOptions"
-          :key="label"
-          :to="to"
-          class="flex place-content-center place-items-center py-3"
-          variant="subtle"
-          color="neutral"
-          disabled
-        >
-          <UIcon v-if="icon" :name="icon" class="size-5" />
-
-          <h3 class="truncate text-base font-medium sm:text-lg">
-            {{ label }}
-          </h3>
-        </UButton>
-      </div>
+    <div class="my-4 flex flex-col gap-4">
+      <ClientOnly>
+        <UAlert
+          :actions="[
+            {
+              label: 'Add to Library',
+              variant: 'subtle',
+              icon: 'i-lucide-plus',
+              onClick: () => onAddToLibrary(deck?.id),
+            },
+          ]"
+          :orientation="smAndLarger ? 'horizontal' : 'vertical'"
+          title="Attention!"
+          description="Add this deck to your library for learning."
+          icon="i-lucide-terminal"
+          color="info"
+          variant="outline"
+        />
+      </ClientOnly>
 
       <div class="space-y-2">
         <UCard
@@ -88,6 +106,7 @@ watchImmediate(error, (newErr) => {
           }"
           class="bg-elevated flex min-h-[50dvh] flex-col divide-none shadow-md"
           variant="subtle"
+          @click="throttledToggleFlip"
         >
           <div class="flex w-full place-content-between place-items-center">
             <span class="flex place-items-center gap-1 font-medium">
@@ -99,40 +118,46 @@ watchImmediate(error, (newErr) => {
                 @click.stop="console.log('TTS not implemented yet')"
               />
 
-              <!-- {{ !isFlipped ? 'Term' : 'Definition' }} -->
-              Term
+              {{ !isFlipped ? 'Term' : 'Definition' }}
             </span>
           </div>
 
-          <div class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl">
-            <!-- {{
-            !isFlipped
-              ? session.currentCard?.term
-              : session.currentCard?.definition
-          }} -->
-
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+          <div
+            v-if="deck && deck.cards[0]"
+            class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
+          >
+            {{ !isFlipped ? deck.cards[0].term : deck.cards[0].definition }}
           </div>
 
           <div />
         </UCard>
 
         <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <div class="col-span-1">
-            <!-- :to="`/${user?.username}`" -->
-            <UButton variant="link" color="neutral" class="w-fit p-0">
+          <div class="col-span-1 cursor-default">
+            <UButton
+              v-if="deck"
+              class="w-fit p-0 hover:bg-inherit active:bg-inherit"
+              variant="ghost"
+              color="neutral"
+            >
               <div class="flex place-items-center gap-2">
-                <UAvatar :src="''" alt="BC" size="xl" />
+                <UAvatar
+                  :ui="{ fallback: 'uppercase' }"
+                  :src="deck.owner.avatarUrl || ''"
+                  :alt="deck.owner.username"
+                  class="cursor-pointer"
+                  size="xl"
+                />
 
-                <div class="flex flex-col">
-                  <span class="text-muted text-start text-sm font-normal"
-                    >Created by</span
+                <div class="flex flex-col place-items-start">
+                  <span class="text-muted text-sm font-normal">Owner</span>
+
+                  <NuxtLink
+                    :to="`/shared/${deck.owner.username}`"
+                    class="cursor-default text-base font-medium hover:underline sm:text-base"
                   >
-
-                  <p class="text-default text-base font-medium">
-                    <!-- {{ user!.username }} -->
-                    BenjaminChang
-                  </p>
+                    {{ deck.owner.username }}
+                  </NuxtLink>
                 </div>
               </div>
             </UButton>
@@ -165,19 +190,21 @@ watchImmediate(error, (newErr) => {
 
     <USeparator class="my-6" />
 
-    <div class="space-y-4">
-      <h2 class="text-lg font-medium sm:text-xl">Cards (25)</h2>
+    <div v-if="deck" class="space-y-4">
+      <h2 class="text-lg font-medium sm:text-xl">
+        Cards ({{ deck.totalCards }})
+      </h2>
 
       <TransitionGroup name="list" appear>
         <UCard
-          v-for="(card, index) in Array.from({ length: 25 })"
+          v-for="(card, index) in deck.cards"
           :key="index"
           class="bg-elevated shadow-md"
           variant="subtle"
         >
           <div class="flex flex-col sm:flex-row">
             <p class="w-full text-base font-medium sm:text-lg">
-              cillum officia dolore Ex ut ut laborum proident ut nostrud.
+              {{ card.term }}
             </p>
 
             <USeparator class="m-2 sm:hidden" />
@@ -188,7 +215,7 @@ watchImmediate(error, (newErr) => {
             />
 
             <p class="w-full text-base font-medium sm:text-lg">
-              aute dolor pariatur ad sunt
+              {{ card.definition }}
             </p>
           </div>
         </UCard>

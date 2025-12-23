@@ -12,6 +12,8 @@ export type User = {
   updatedAt?: Date | null;
 };
 
+export type Owner = Pick<User, 'id' | 'username' | 'avatarUrl'>;
+
 export type UserStats = {
   currentStreak: number;
   longestStreak: number;

@@ -17,6 +17,8 @@ const {
   query: searchQuery,
 } = useDeckSearch();
 
+const input = useTemplateRef('input');
+
 const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
@@ -56,6 +58,12 @@ async function onAddToLibrary(deckId: UUID) {
       toast.add({ title: err.data?.message });
     });
 }
+
+defineShortcuts({
+  '/': () => {
+    input.value?.inputRef?.focus();
+  },
+});
 </script>
 
 <template>
@@ -66,12 +74,17 @@ async function onAddToLibrary(deckId: UUID) {
 
     <div class="flex w-full place-content-between gap-2">
       <UInput
+        ref="input"
         v-model="search"
         class="sm:basis-1/2"
         icon="i-lucide-search"
         placeholder="Search decks..."
         autofocus
-      />
+      >
+        <template #trailing>
+          <UKbd class="hidden sm:flex" value="/" />
+        </template>
+      </UInput>
 
       <USelect v-model="filter" :items="filterItems" value-key="id" />
     </div>
@@ -159,7 +172,7 @@ async function onAddToLibrary(deckId: UUID) {
                     :alt="d.owner.username"
                   />
 
-                  <div class="flex flex-col">
+                  <div class="flex flex-col place-items-start">
                     <NuxtLink
                       :to="`/shared/${d.owner.username}`"
                       class="cursor-default place-self-start text-sm font-medium hover:underline sm:text-base"

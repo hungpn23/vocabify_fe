@@ -21,10 +21,6 @@ const items = computed<NavigationMenuItem[]>(() => [
     to: '/shared',
   },
   {
-    label: 'Forum',
-    to: '#',
-  },
-  {
     label: 'About me',
     to: '#',
   },

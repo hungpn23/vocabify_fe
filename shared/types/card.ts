@@ -21,6 +21,8 @@ export const cardSchema = v.object({
 
 export type Card = v.InferOutput<typeof cardSchema>;
 
+export type PreviewCard = Pick<Card, 'term' | 'definition'>;
+
 export type CardToSave = Pick<Card, 'id' | 'streak' | 'reviewDate'>;
 
 // --- FLASHCARD ---

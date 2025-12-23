@@ -6,6 +6,8 @@ const { token, data: user } = useAuth();
 
 const { page, limit, filter, search, filterItems, query } = useDeckSearch();
 
+const input = useTemplateRef('input');
+
 const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
 );
@@ -61,6 +63,12 @@ function getDeckProgress(deck: GetManyRes) {
 
   return Math.round((known / total) * 100);
 }
+
+defineShortcuts({
+  '/': () => {
+    input.value?.inputRef?.focus();
+  },
+});
 </script>
 
 <template>
@@ -143,12 +151,17 @@ function getDeckProgress(deck: GetManyRes) {
           class="flex w-full basis-2/3 place-content-end gap-2 place-self-end sm:gap-4"
         >
           <UInput
+            ref="input"
             v-model="search"
             class="flex-1"
             icon="i-lucide-search"
             placeholder="Search decks..."
             autofocus
-          />
+          >
+            <template #trailing>
+              <UKbd class="hidden sm:flex" value="/" />
+            </template>
+          </UInput>
 
           <USelect v-model="filter" :items="filterItems" value-key="id" />
         </div>
