@@ -4,9 +4,9 @@ export enum UserRole {
 }
 
 export enum Visibility {
-  PUBLIC = 'Everyone',
-  PROTECTED = 'People with a passcode',
-  PRIVATE = 'Just me',
+  PUBLIC = 'everyone',
+  PROTECTED = 'people_with_a_passcode',
+  PRIVATE = 'just_me',
 }
 
 // https://github.com/mikro-orm/mikro-orm/blob/master/packages/core/src/enums.ts#L73

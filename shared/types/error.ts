@@ -9,6 +9,7 @@ export type ErrorDetail = {
 export type ErrorResponse = FetchError<{
   timestamp: string;
   statusCode: number;
+  statusMessage?: string;
   message: string;
   details?: ErrorDetail[];
 }>;

@@ -199,7 +199,7 @@ function resetFormState(deck?: GetOneRes) {
 
 function addCardFirst() {
   state.cards?.unshift({
-    id: `temp ${crypto.randomUUID()}` as UUID,
+    id: crypto.randomUUID() as UUID,
     term: '',
     definition: '',
     streak: 0,
@@ -215,7 +215,7 @@ function addCardFirst() {
 
 function addCardLast() {
   state.cards?.push({
-    id: `temp ${crypto.randomUUID()}` as UUID,
+    id: crypto.randomUUID() as UUID,
     term: '',
     definition: '',
     streak: 0,
