@@ -106,8 +106,12 @@ export const useFlashcardSession = () => {
   }
 
   function shuffleCards() {
+    if (!session.currentCard) return;
+
     session.studyQueue = shuffleArray(session.studyQueue);
     session.retryQueue = shuffleArray(session.retryQueue);
+
+    session.studyQueue.push(session.currentCard);
     session.currentCard = session.studyQueue.shift();
   }
 

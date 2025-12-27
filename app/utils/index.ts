@@ -20,6 +20,16 @@ export const getVisibilityDesc = (visibility: Visibility) => {
   return desc[visibility];
 };
 
+export const getVisibilityLabel = (visibility: Visibility) => {
+  const label: Record<Visibility, string> = {
+    [Visibility.PUBLIC]: 'Everyone',
+    [Visibility.PROTECTED]: 'People with a passcode',
+    [Visibility.PRIVATE]: 'Just me',
+  };
+
+  return label[visibility];
+};
+
 export const getContentSeparator = (
   value: ContentSeparator,
   custom: string = '',

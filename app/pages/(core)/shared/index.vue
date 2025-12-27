@@ -138,7 +138,7 @@ defineShortcuts({
                 <UTooltip :delay-duration="200" text="Views">
                   <UBadge
                     :ui="{ base: 'flex place-content-center' }"
-                    :label="d.learnerCount"
+                    :label="d.viewCount"
                     class="min-w-12"
                     icon="i-lucide-eye"
                     variant="outline"

@@ -316,10 +316,7 @@ onMounted(() => {
       </div>
     </div>
 
-    <div
-      v-if="session.questions.length"
-      class="mb-8 flex w-full flex-col gap-2"
-    >
+    <div v-if="session.questions.length" class="flex w-full flex-col gap-2">
       <h1
         class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >

@@ -532,7 +532,7 @@ defineShortcuts({
           </template>
         </UPageHeader>
 
-        <UPageBody class="mt-4">
+        <UPageBody class="mt-4 pb-0">
           <div class="flex flex-col gap-4">
             <div
               class="grid place-content-between place-items-center gap-4 sm:flex"

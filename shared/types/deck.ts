@@ -21,6 +21,7 @@ export type Deck = {
   slug: string;
   description?: string | null;
   visibility: Visibility;
+  viewCount: number;
   learnerCount: number;
   clonedFrom?: Pick<Deck, 'id' | 'name'> | null;
   openedAt?: string | null;
@@ -54,7 +55,13 @@ export type GetSharedOneRes = Pick<Deck, 'id' | 'name' | 'description'> & {
 
 export type GetSharedManyRes = Pick<
   Deck,
-  'id' | 'name' | 'slug' | 'visibility' | 'learnerCount' | 'createdAt'
+  | 'id'
+  | 'name'
+  | 'slug'
+  | 'visibility'
+  | 'viewCount'
+  | 'learnerCount'
+  | 'createdAt'
 > & {
   totalCards: number;
   owner: Owner;

@@ -54,7 +54,7 @@ const isShortcutOpen = ref(false);
           <div>Skip/Next card</div>
 
           <div class="flex place-items-center">
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
             <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>
@@ -65,8 +65,8 @@ const isShortcutOpen = ref(false);
           <div>Choose an answer</div>
 
           <div class="flex place-items-center">
-            <AppKbd label="1" />/ <AppKbd label="2" />/ <AppKbd label="3" />/
-            <AppKbd label="4" />
+            <AppKbd label="1" />,<AppKbd label="2" />,
+            <AppKbd label="3" />,<AppKbd label="4" />
           </div>
         </div>
 
@@ -74,15 +74,17 @@ const isShortcutOpen = ref(false);
           <div>Get a hint</div>
 
           <div class="place-items center flex">
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
             <AppKbd label="Shift" />+
             <AppKbd label="/" />
           </div>
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Mark as don't know</div>
+          <div>Skip</div>
 
           <div class="place-items center flex">
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
             <AppKbd label="Shift" />+
             <AppKbd label="X" />
           </div>
@@ -94,8 +96,18 @@ const isShortcutOpen = ref(false);
           <div>Previous/Next question</div>
 
           <div class="flex place-items-center">
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
             <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
+          </div>
+        </div>
+
+        <div class="flex place-content-between place-items-center gap-2">
+          <div>Mark as don't know</div>
+
+          <div class="place-items center flex">
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
+            <AppKbd label="Shift" />+
+            <AppKbd label="X" />
           </div>
         </div>
 
@@ -106,7 +118,7 @@ const isShortcutOpen = ref(false);
 
           <div class="place-items center flex">
             <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />/
+            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
             <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>
         </div>

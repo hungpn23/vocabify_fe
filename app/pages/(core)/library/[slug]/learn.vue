@@ -41,6 +41,14 @@ const setting = reactive<LearnSetting>({
 let snapshotSetting = '';
 
 const isIncorrect = computed(() => state.isCorrect === false);
+const correctChoiceExist = computed(() => {
+  const q = session.currentQuestion;
+
+  return (
+    q?.type === 'multiple_choices' &&
+    (!!q.correctChoiceIndex || q.correctChoiceIndex === 0)
+  );
+});
 
 const progress = computed(() => {
   if (!session.totalQuestions) return 0;
@@ -154,6 +162,7 @@ function resetQuestionState() {
   state.isInReview = false;
   state.userAnswer = '';
   state.userChoiceIndex = -1;
+  state.hintUsedCount = 0;
 
   const inputRef = inputElement.value?.inputRef;
   if (inputRef) {
@@ -273,12 +282,28 @@ function getChoiceDisabledState(cIndex: number) {
   return true;
 }
 
+function handleSkip() {
+  if (!session.currentQuestion) return;
+
+  throttledSubmitAnswer(
+    session.currentQuestion.type === 'multiple_choices' ? -1 : '',
+  );
+}
+
 defineShortcuts({
   ' ': () => throttledNextAnswer(state.isCorrect, session.currentQuestion),
   '1': () => handleChoiceShortcut(0),
   '2': () => handleChoiceShortcut(1),
   '3': () => handleChoiceShortcut(2),
   '4': () => handleChoiceShortcut(3),
+  'meta_shift_/': {
+    handler: () => onGetAHint(),
+    usingInput: true,
+  },
+  meta_shift_x: {
+    handler: () => handleSkip(),
+    usingInput: true,
+  },
 });
 </script>
 
@@ -379,9 +404,9 @@ defineShortcuts({
 
           <UButton
             v-if="session.currentQuestion.type === 'written'"
+            :variant="smAndLarger ? 'soft' : 'ghost'"
             class="mr-0 cursor-pointer"
             icon="i-lucide-lightbulb"
-            :variant="smAndLarger ? 'soft' : 'ghost'"
             color="neutral"
             @click="onGetAHint"
           >
@@ -456,10 +481,12 @@ defineShortcuts({
 
           <div class="flex place-content-end place-items-center gap-2">
             <UButton
+              :disabled="state.isInReview"
               class="cursor-pointer place-self-end font-medium"
               variant="ghost"
               color="error"
               tabindex="-1"
+              @click="handleSkip"
             >
               Skip?
             </UButton>
@@ -501,11 +528,13 @@ defineShortcuts({
         >
           Press
           <AppKbd label="Space" />
-          <span v-if="session.currentQuestion.correctChoiceIndex">
-            or
-            <AppKbd :label="session.currentQuestion.correctChoiceIndex + 1" />
-          </span>
-          to continue
+
+          or
+          <AppKbd
+            v-if="correctChoiceExist"
+            :label="session.currentQuestion.correctChoiceIndex! + 1"
+          />
+          to continue.
         </div>
 
         <div v-else />

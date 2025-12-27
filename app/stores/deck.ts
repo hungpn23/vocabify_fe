@@ -26,12 +26,12 @@ export const useDeckStore = defineStore('deck', () => {
       watch: false, // handled manually
 
       onResponseError: ({ response }) => {
-        if (response.status === 404) {
-          showError({
-            statusCode: 404,
-            message: 'Deck not found.',
-          });
-        }
+        console.log(`🚀 ~ response:`, response._data);
+
+        showError({
+          statusCode: 404,
+          statusMessage: 'Page Not Found',
+        });
       },
     },
   );
@@ -42,7 +42,7 @@ export const useDeckStore = defineStore('deck', () => {
     async (newName) => {
       const newNameStr = newName?.toString() || '';
 
-      if (newNameStr === 'library-slug') {
+      if (newNameStr.includes('library-slug')) {
         deckId.value = route.query.deckId as string;
         slug.value = route.params.slug as string;
 

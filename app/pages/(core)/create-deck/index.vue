@@ -40,6 +40,21 @@ const { token } = useAuth();
 
 const passcodeInput = useTemplateRef('passcodeInput');
 
+const visibilityItems = ref<(SelectMenuItem & { id: Visibility })[]>([
+  {
+    id: Visibility.PUBLIC,
+    label: getVisibilityLabel(Visibility.PUBLIC),
+  },
+  {
+    id: Visibility.PROTECTED,
+    label: getVisibilityLabel(Visibility.PROTECTED),
+  },
+  {
+    id: Visibility.PRIVATE,
+    label: getVisibilityLabel(Visibility.PRIVATE),
+  },
+]);
+
 const contentSeparatorItems = ref<SelectMenuItem[]>([
   {
     id: 'tab' satisfies ContentSeparator,
@@ -311,7 +326,7 @@ async function onError(event: FormErrorEvent) {
         title="Manage your deck access"
       >
         <UButton
-          :label="createState.visibility"
+          :label="getVisibilityLabel(createState.visibility)"
           :icon="getVisibilityIcon(createState.visibility)"
           class="cursor-pointer"
           variant="subtle"
@@ -326,9 +341,10 @@ async function onError(event: FormErrorEvent) {
           >
             <USelect
               v-model="createState.visibility"
-              :items="Object.values(Visibility)"
+              :items="visibilityItems"
               :icon="getVisibilityIcon(createState.visibility)"
               :ui="{ content: 'min-w-fit' }"
+              value-key="id"
               variant="subtle"
             />
           </UFormField>
