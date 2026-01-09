@@ -24,7 +24,7 @@ const formErrorMsg = ref('');
 const isEditing = ref(false);
 const isSavingChanges = ref(false);
 
-const state = reactive<Partial<UpdateDeck>>({});
+const state = reactive<Partial<UpdateDeckSchema>>({});
 
 const settingOptions = computed<DropdownMenuItem[][]>(() => [
   [
@@ -131,7 +131,11 @@ async function onDelete() {
 }
 
 async function onSubmit(
-  event: FormSubmitEvent<{ name: string; description: string; cards: Card[] }>,
+  event: FormSubmitEvent<{
+    name: string;
+    description: string;
+    cards: UpdateCardSchema[];
+  }>,
 ) {
   if (isSavingChanges.value) return;
   isSavingChanges.value = true;

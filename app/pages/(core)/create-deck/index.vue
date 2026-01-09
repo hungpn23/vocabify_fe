@@ -1,38 +1,19 @@
 <script lang="ts" setup>
-import * as v from 'valibot';
-import type { FormErrorEvent, FormSubmitEvent, SelectMenuItem } from '@nuxt/ui';
+import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui';
+import {
+  createDeckSchema,
+  importCardsSchema,
+  type CreateDeckSchema,
+  type ImportCardsSchema,
+} from './schemas';
 
-const createSchema = v.object({
-  name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
-  description: v.string(),
-  visibility: v.enum(Visibility),
-  passcode: v.nullish(
-    v.pipe(
-      v.string(),
-      v.minLength(4, 'Passcode must be at least 4 characters'),
-      v.maxLength(20, 'Passcode must be at most 20 characters'),
-    ),
-  ),
-  cards: v.pipe(
-    v.array(
-      v.object({
-        term: v.pipe(v.string(), v.minLength(1, 'Term is required')),
-        definition: v.pipe(
-          v.string(),
-          v.minLength(1, 'Definition is required'),
-        ),
-      }),
-    ),
-    v.minLength(4, 'At least 4 cards are required'),
-  ),
-});
-
-const importSchema = v.object({
-  cards: v.pipe(v.string(), v.minLength(1, 'Cards are required')),
-});
-
-type CreateSchema = v.InferOutput<typeof createSchema>;
-type ImportSchema = v.InferOutput<typeof importSchema>;
+import {
+  visibilityItems,
+  contentSeparatorItems,
+  cardSeparatorItems,
+  termLanguageCodeItems,
+  definitionLanguageCodeItems,
+} from './select-items';
 
 const router = useRouter();
 const toast = useToast();
@@ -40,70 +21,47 @@ const { token } = useAuth();
 
 const passcodeInput = useTemplateRef('passcodeInput');
 
-const visibilityItems = ref<(SelectMenuItem & { id: Visibility })[]>([
-  {
-    id: Visibility.PUBLIC,
-    label: getVisibilityLabel(Visibility.PUBLIC),
-  },
-  {
-    id: Visibility.PROTECTED,
-    label: getVisibilityLabel(Visibility.PROTECTED),
-  },
-  {
-    id: Visibility.PRIVATE,
-    label: getVisibilityLabel(Visibility.PRIVATE),
-  },
-]);
-
-const contentSeparatorItems = ref<SelectMenuItem[]>([
-  {
-    id: 'tab' satisfies ContentSeparator,
-    label: 'Tab',
-  },
-  {
-    id: 'comma' satisfies ContentSeparator,
-    label: 'Comma',
-  },
-  {
-    id: 'custom' satisfies ContentSeparator,
-    label: 'Custom',
-  },
-]);
-
-const cardSeparatorItems = ref<(SelectMenuItem & { id: CardSeparator })[]>([
-  {
-    id: 'new_line' satisfies CardSeparator,
-    label: 'New line',
-  },
-  {
-    id: 'semicolon' satisfies CardSeparator,
-    label: 'Semicolon',
-  },
-  {
-    id: 'custom' satisfies CardSeparator,
-    label: 'Custom',
-  },
-]);
-
 const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
 const formErrorMsg = ref('');
+const termLanguageCode = ref<LanguageCode>('en');
+const definitionLanguageCode = ref<LanguageCode>('en');
 
-const createState = reactive<CreateSchema>({
+const createState = reactive<CreateDeckSchema>({
   name: '',
   description: '',
   visibility: Visibility.PUBLIC,
-  passcode: null,
   cards: [
-    { term: '', definition: '' },
-    { term: '', definition: '' },
-    { term: '', definition: '' },
+    {
+      term: '',
+      definition: '',
+      termLanguage: 'en',
+      definitionLanguage: 'en',
+    },
+    {
+      term: '',
+      definition: '',
+      termLanguage: 'en',
+      definitionLanguage: 'en',
+    },
+    {
+      term: '',
+      definition: '',
+      termLanguage: 'en',
+      definitionLanguage: 'en',
+    },
+    {
+      term: '',
+      definition: '',
+      termLanguage: 'en',
+      definitionLanguage: 'en',
+    },
   ],
 });
 
 const importState = reactive({
-  cards: '',
+  input: '',
   contentSeparator: 'tab' as ContentSeparator,
   cardSeparator: 'new_line' as CardSeparator,
   customContentSeparator: '-',
@@ -136,9 +94,9 @@ const parsedCards = computed(() => {
     importState.customCardSeparator,
   );
 
-  if (!importState.cards || !sep || !cardSep) return [];
+  if (!importState.input || !sep || !cardSep) return [];
 
-  const cards = importState.cards
+  const cards = importState.input
     .split(cardSep)
     .filter((card) => card.trim().length > 0);
 
@@ -163,7 +121,7 @@ function onPasscodeInputMounted() {
   }, 300);
 }
 
-async function onCreate(event: FormSubmitEvent<CreateSchema>) {
+async function onCreate(event: FormSubmitEvent<CreateDeckSchema>) {
   formErrorMsg.value = '';
   if (isSubmitting.value) return;
   isSubmitting.value = true;
@@ -183,6 +141,7 @@ async function onCreate(event: FormSubmitEvent<CreateSchema>) {
       });
     })
     .catch((error: ErrorResponse) => {
+      console.log(`🚀 ~ onCreate ~ error.data:`, error.data);
       toast.add({
         title: 'Create failed!',
         description: JSON.stringify(error.data || 'Unknown error'),
@@ -195,7 +154,7 @@ async function onCreate(event: FormSubmitEvent<CreateSchema>) {
     });
 }
 
-async function onImportSubmit(event: FormSubmitEvent<ImportSchema>) {
+async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
   const sep = getContentSeparator(
     importState.contentSeparator,
     importState.customContentSeparator,
@@ -217,13 +176,18 @@ async function onImportSubmit(event: FormSubmitEvent<ImportSchema>) {
     return;
   }
 
-  const importCards = event.data.cards
+  const importCards = event.data.input
     .split(cardSep)
     .filter((card) => card.trim().length > 0)
     .map((card) => {
       const [term = '', definition = ''] = card.split(sep);
 
-      return { term, definition };
+      return {
+        term,
+        definition,
+        termLanguage: 'en' as LanguageCode,
+        definitionLanguage: 'en' as LanguageCode,
+      };
     });
 
   const currentCards = createState.cards.filter(
@@ -242,7 +206,7 @@ async function onImportSubmit(event: FormSubmitEvent<ImportSchema>) {
 }
 
 async function onError(event: FormErrorEvent) {
-  const cardError = event.errors.find((e) => e.name === 'cards');
+  const cardError = event.errors.find((e) => e.name === 'input');
 
   formErrorMsg.value = cardError
     ? cardError.message
@@ -286,9 +250,10 @@ async function onError(event: FormErrorEvent) {
       />
     </div>
 
+    <!-- Create Deck Form -->
     <UForm
       id="create-deck-form"
-      :schema="createSchema"
+      :schema="createDeckSchema"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
       @submit="onCreate"
@@ -299,7 +264,6 @@ async function onError(event: FormErrorEvent) {
           v-model="createState.name"
           :ui="{ base: 'sm:text-lg' }"
           class="w-full"
-          variant="subtle"
           placeholder="Enter a name, like “Biology - Chapter 22: Evolution”"
         />
       </UFormField>
@@ -312,7 +276,6 @@ async function onError(event: FormErrorEvent) {
           :ui="{ base: 'sm:text-lg' }"
           class="w-full"
           placeholder="Describe your deck (optional)"
-          variant="subtle"
           autoresize
         />
       </UFormField>
@@ -391,16 +354,17 @@ async function onError(event: FormErrorEvent) {
           />
 
           <template #body>
+            <!-- Import Cards Form -->
             <UForm
               id="import-form"
-              :schema="importSchema"
+              :schema="importCardsSchema"
               :state="importState"
               class="flex flex-col gap-4"
               @submit="onImportSubmit"
             >
-              <UFormField name="cards">
+              <UFormField name="input">
                 <UTextarea
-                  v-model="importState.cards"
+                  v-model="importState.input"
                   :rows="7"
                   :maxrows="10"
                   class="w-full"
@@ -564,19 +528,6 @@ async function onError(event: FormErrorEvent) {
       </div>
 
       <div class="flex flex-col gap-4">
-        <UCard
-          class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed transition-all select-none active:scale-95"
-          @click="createState.cards.unshift({ term: '', definition: '' })"
-        >
-          <div class="flex place-content-center place-items-center gap-2">
-            <UIcon name="i-lucide-plus" class="size-8" />
-
-            <span class="text-base font-semibold sm:text-lg">
-              Add new card
-            </span>
-          </div>
-        </UCard>
-
         <TransitionGroup name="list">
           <UCard
             v-for="(c, index) in createState.cards"
@@ -584,51 +535,101 @@ async function onError(event: FormErrorEvent) {
             class="bg-elevated"
             variant="subtle"
           >
-            <div
-              class="mb-1 flex place-content-between place-items-center px-0"
-            >
-              <p class="text-base font-medium sm:text-lg">{{ index + 1 }}</p>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div class="flex h-fit flex-col gap-2">
+                <div class="flex place-content-between place-items-center">
+                  <span class="text-base font-medium sm:text-lg">
+                    {{ index + 1 }}
+                  </span>
 
-              <UButton
-                class="cursor-pointer"
-                icon="i-lucide-trash-2"
-                color="error"
-                variant="ghost"
-                @click="createState.cards.splice(index, 1)"
-              />
+                  <USelectMenu
+                    v-model="termLanguageCode"
+                    :items="termLanguageCodeItems"
+                    value-key="id"
+                  />
+                </div>
+
+                <UFormField class="sm:flex-1" :name="`cards.${index}.term`">
+                  <UTextarea
+                    v-model="c.term"
+                    :rows="1"
+                    :maxrows="10"
+                    :ui="{ base: 'text-base font-medium' }"
+                    class="w-full"
+                    placeholder="Enter your term..."
+                    autoresize
+                  />
+                </UFormField>
+
+                <!-- <div class="grid grid-cols-2 gap-1">
+                  <UInput
+                    :ui="{ base: 'text-base' }"
+                    placeholder="part of speech..."
+                  />
+                  <UInput
+                    :ui="{ base: 'text-base' }"
+                    placeholder="pronunciation..."
+                  />
+                </div> -->
+              </div>
+
+              <USeparator class="sm:hidden" />
+
+              <div class="flex h-fit flex-col gap-2">
+                <USelectMenu
+                  class="place-self-end"
+                  v-model="definitionLanguageCode"
+                  :items="definitionLanguageCodeItems"
+                  value-key="id"
+                />
+
+                <UFormField
+                  class="sm:flex-1"
+                  :name="`cards.${index}.definition`"
+                >
+                  <UTextarea
+                    v-model="c.definition"
+                    :rows="1"
+                    :maxrows="10"
+                    :ui="{ base: 'text-base font-medium' }"
+                    class="w-full"
+                    placeholder="Enter your definition..."
+                    autoresize
+                  />
+                </UFormField>
+
+                <!-- <UInput
+                  :ui="{ base: 'text-base' }"
+                  placeholder="example sentence 1..."
+                /> -->
+              </div>
             </div>
 
-            <div class="flex flex-col gap-3 sm:flex-row">
-              <UFormField class="sm:flex-1" :name="`cards.${index}.term`">
-                <UTextarea
-                  v-model="c.term"
-                  :rows="1"
-                  :maxrows="10"
-                  :ui="{ base: 'text-base sm:text-lg font-medium' }"
-                  class="w-full"
-                  placeholder="Enter your term..."
-                  autoresize
-                />
-              </UFormField>
-
-              <UFormField class="sm:flex-1" :name="`cards.${index}.definition`">
-                <UTextarea
-                  v-model="c.definition"
-                  :rows="1"
-                  :maxrows="10"
-                  :ui="{ base: 'text-base sm:text-lg font-medium' }"
-                  class="w-full"
-                  placeholder="Enter your definition..."
-                  autoresize
-                />
-              </UFormField>
-            </div>
+            <UButton
+              class="mt-2 flex place-self-end"
+              label="Remove"
+              icon="i-lucide-trash-2"
+              color="error"
+              variant="ghost"
+              @click="createState.cards.splice(index, 1)"
+            />
           </UCard>
         </TransitionGroup>
 
         <UCard
-          class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed transition-all select-none active:scale-95"
-          @click="createState.cards.push({ term: '', definition: '' })"
+          class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95"
+          @click="
+            createState.cards.push({
+              term: '',
+              definition: '',
+              termLanguage: 'en',
+              definitionLanguage: 'en',
+              pronunciation: '',
+              partOfSpeech: '',
+              usageOrGrammar: '',
+              example: '',
+            })
+          "
         >
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />

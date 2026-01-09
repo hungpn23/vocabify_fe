@@ -74,8 +74,8 @@ const isShortcutOpen = ref(false);
           <div>Get a hint</div>
 
           <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
-            <AppKbd label="Shift" />+
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+            <AppKbd label="Shift" />
             <AppKbd label="/" />
           </div>
         </div>
@@ -84,8 +84,8 @@ const isShortcutOpen = ref(false);
           <div>Skip</div>
 
           <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
-            <AppKbd label="Shift" />+
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+            <AppKbd label="Shift" />
             <AppKbd label="X" />
           </div>
         </div>
@@ -105,8 +105,8 @@ const isShortcutOpen = ref(false);
           <div>Mark as don't know</div>
 
           <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
-            <AppKbd label="Shift" />+
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
+            <AppKbd label="Shift" />
             <AppKbd label="X" />
           </div>
         </div>
@@ -117,7 +117,7 @@ const isShortcutOpen = ref(false);
           <div>Go back/forward</div>
 
           <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />+
+            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
             <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
             <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
           </div>

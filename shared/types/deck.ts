@@ -1,19 +1,19 @@
 import type { Visibility } from '~/utils/enums';
 import type { UUID } from './branded';
 import type { Owner } from './user';
-import { cardSchema, type Card, type PreviewCard } from './card';
+import { updateCardSchema, type Card, type PreviewCard } from './card';
 import * as v from 'valibot';
 
 export const updateDeckSchema = v.object({
   name: v.pipe(v.string(), v.minLength(1, 'Name is required')),
   description: v.string(),
   cards: v.pipe(
-    v.array(cardSchema),
+    v.array(updateCardSchema),
     v.minLength(4, 'At least 4 cards are required'),
   ),
 });
 
-export type UpdateDeck = v.InferOutput<typeof updateDeckSchema>;
+export type UpdateDeckSchema = v.InferOutput<typeof updateDeckSchema>;
 
 export type Deck = {
   id: UUID;
@@ -86,3 +86,6 @@ export type ContentSeparator = 'tab' | 'comma' | 'custom';
 export type CardSeparator = 'new_line' | 'semicolon' | 'custom';
 
 export type CreateDeckRes = Pick<Deck, 'id' | 'slug'>;
+
+export const LANGUAGE_CODES = ['en', 'vi'] as const;
+export type LanguageCode = (typeof LANGUAGE_CODES)[number];

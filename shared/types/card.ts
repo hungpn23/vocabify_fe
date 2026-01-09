@@ -1,7 +1,7 @@
 import type { UUID } from './branded';
 import * as v from 'valibot';
 
-export const cardSchema = v.object({
+export const updateCardSchema = v.object({
   id: v.pipe(
     v.string(),
     v.transform((val) => val as UUID),
@@ -19,7 +19,22 @@ export const cardSchema = v.object({
   status: v.picklist(['known', 'learning', 'new'] as const),
 });
 
-export type Card = v.InferOutput<typeof cardSchema>;
+export type UpdateCardSchema = v.InferOutput<typeof updateCardSchema>;
+
+export type Card = {
+  id: UUID;
+  term: string;
+  termLanguage: string;
+  definition: string;
+  definitionLanguage: string;
+  pronunciation: string;
+  partOfSpeech: string;
+  usageOrGrammar: string;
+  example: string;
+  streak: number;
+  reviewDate?: string;
+  status: CardStatus;
+};
 
 export type PreviewCard = Pick<Card, 'term' | 'definition'>;
 
