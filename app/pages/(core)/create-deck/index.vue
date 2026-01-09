@@ -11,8 +11,8 @@ import {
   visibilityItems,
   contentSeparatorItems,
   cardSeparatorItems,
-  termLanguageCodeItems,
-  definitionLanguageCodeItems,
+  termLanguageItems,
+  definitionLanguageItems,
 } from './select-items';
 
 const router = useRouter();
@@ -25,8 +25,6 @@ const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
 const formErrorMsg = ref('');
-const termLanguageCode = ref<LanguageCode>('en');
-const definitionLanguageCode = ref<LanguageCode>('en');
 
 const createState = reactive<CreateDeckSchema>({
   name: '',
@@ -37,25 +35,25 @@ const createState = reactive<CreateDeckSchema>({
       term: '',
       definition: '',
       termLanguage: 'en',
-      definitionLanguage: 'en',
+      definitionLanguage: 'vi',
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
-      definitionLanguage: 'en',
+      definitionLanguage: 'vi',
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
-      definitionLanguage: 'en',
+      definitionLanguage: 'vi',
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
-      definitionLanguage: 'en',
+      definitionLanguage: 'vi',
     },
   ],
 });
@@ -121,7 +119,12 @@ function onPasscodeInputMounted() {
   }, 300);
 }
 
-async function onCreate(event: FormSubmitEvent<CreateDeckSchema>) {
+function isWord(term: string) {
+  return !term.trim().includes(' ');
+}
+
+async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
+  console.log(`🚀 ~ onCreateSubmit ~ event:`, event);
   formErrorMsg.value = '';
   if (isSubmitting.value) return;
   isSubmitting.value = true;
@@ -149,9 +152,7 @@ async function onCreate(event: FormSubmitEvent<CreateDeckSchema>) {
         duration: 2000,
       });
     })
-    .finally(() => {
-      isSubmitting.value = false;
-    });
+    .finally(() => (isSubmitting.value = false));
 }
 
 async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
@@ -256,7 +257,7 @@ async function onError(event: FormErrorEvent) {
       :schema="createDeckSchema"
       :state="createState"
       class="mt-4 flex flex-col gap-2"
-      @submit="onCreate"
+      @submit="onCreateSubmit"
       @error="onError"
     >
       <UFormField label="Name" name="name" required>
@@ -280,257 +281,34 @@ async function onError(event: FormErrorEvent) {
         />
       </UFormField>
 
-      <UModal
-        v-model:open="isVisibilityModalOpen"
-        :ui="{ title: 'text-lg sm:text-xl' }"
-        class="mt-2 w-fit"
-        title="Manage your deck access"
-      >
-        <UButton
-          :label="getVisibilityLabel(createState.visibility)"
-          :icon="getVisibilityIcon(createState.visibility)"
-          class="cursor-pointer"
-          variant="subtle"
-          color="neutral"
-        />
-
-        <template #body>
-          <UFormField
-            :help="getVisibilityDesc(createState.visibility)"
-            label="Visibility"
-            name="visibility"
-          >
-            <USelect
-              v-model="createState.visibility"
-              :items="visibilityItems"
-              :icon="getVisibilityIcon(createState.visibility)"
-              :ui="{ content: 'min-w-fit' }"
-              value-key="id"
-              variant="subtle"
-            />
-          </UFormField>
-
-          <UFormField
-            v-if="createState.visibility === Visibility.PROTECTED"
-            class="mt-2"
-            label="Passcode"
-            name="passcode"
-            required
-          >
-            <UInput
-              ref="passcodeInput"
-              v-model="createState.passcode"
-              placeholder="Enter your passcode..."
-              @keydown.enter="isVisibilityModalOpen = false"
-              @vue:mounted="onPasscodeInputMounted"
-            />
-          </UFormField>
-        </template>
-      </UModal>
+      <UButton
+        :label="getVisibilityLabel(createState.visibility)"
+        :icon="getVisibilityIcon(createState.visibility)"
+        class="cursor-pointe mt-1 w-fit"
+        variant="outline"
+        color="neutral"
+        @click="isVisibilityModalOpen = true"
+      />
 
       <div class="mt-2 flex place-content-between place-items-center gap-4">
         <h2 class="font-medium sm:text-lg">
           Cards ({{ createState.cards.length }})
         </h2>
 
-        <UModal
-          v-model:open="isImportModalOpen"
-          :ui="{
-            title: 'text-xl sm:text-2xl',
-            content:
-              'sm:inset-x-16 sm:inset-y-8 lg:inset-x-32 lg:inset-y-16 sm:rounded-md',
-          }"
-          class="w-fit"
-          title="Import your cards"
-          description="Copy and Paste your data here (from Word, Excel, Google Docs, CSV Files, etc.)"
-          fullscreen
-        >
-          <UButton
-            class="cursor-pointer"
-            label="Import cards"
-            icon="i-lucide-download"
-            variant="soft"
-            color="secondary"
-          />
-
-          <template #body>
-            <!-- Import Cards Form -->
-            <UForm
-              id="import-form"
-              :schema="importCardsSchema"
-              :state="importState"
-              class="flex flex-col gap-4"
-              @submit="onImportSubmit"
-            >
-              <UFormField name="input">
-                <UTextarea
-                  v-model="importState.input"
-                  :rows="7"
-                  :maxrows="10"
-                  class="w-full"
-                  variant="subtle"
-                  placeholder="Paste your data here..."
-                  autoresize
-                  autofocus
-                />
-              </UFormField>
-
-              <div
-                class="flex flex-col place-items-start gap-3 sm:flex-row sm:gap-6"
-              >
-                <div class="flex place-items-center gap-2">
-                  <UFormField
-                    :ui="{
-                      help: 'whitespace-pre-wrap',
-                    }"
-                    :help="contentSeparatorPreview"
-                    name="contentSeparator"
-                  >
-                    <USelect
-                      v-model="importState.contentSeparator"
-                      :items="contentSeparatorItems"
-                      class="w-full"
-                      variant="subtle"
-                      value-key="id"
-                    />
-
-                    <template #label>
-                      <h3 class="truncate font-semibold sm:text-lg">
-                        Content separator
-                      </h3>
-                    </template>
-                  </UFormField>
-
-                  <UFormField
-                    v-if="importState.contentSeparator === 'custom'"
-                    name="customContentSeparator"
-                  >
-                    <UInput
-                      v-model="importState.customContentSeparator"
-                      class="mt-1"
-                      placeholder="eg. -"
-                    />
-                  </UFormField>
-                </div>
-
-                <div class="flex place-items-center gap-2">
-                  <UFormField
-                    :ui="{
-                      help: 'whitespace-pre-wrap',
-                    }"
-                    :help="cardSeparatorPreview"
-                    name="cardSeparator"
-                  >
-                    <USelect
-                      v-model="importState.cardSeparator"
-                      :items="cardSeparatorItems"
-                      class="w-full"
-                      variant="subtle"
-                      value-key="id"
-                    />
-
-                    <template #label>
-                      <h3 class="truncate font-semibold sm:text-lg">
-                        Card separator
-                      </h3>
-                    </template>
-                  </UFormField>
-
-                  <UFormField
-                    v-if="importState.cardSeparator === 'custom'"
-                    name="customCardSeparator"
-                  >
-                    <UInput
-                      v-model="importState.customCardSeparator"
-                      class="mt-1"
-                      placeholder="eg. \"
-                    />
-                  </UFormField>
-                </div>
-              </div>
-
-              <h3 class="font-semibold sm:text-lg">
-                Preview
-                <span class="text-base font-normal"
-                  >{{ parsedCards.length }} cards</span
-                >
-              </h3>
-
-              <div class="flex flex-col gap-4">
-                <UCard
-                  v-for="(c, index) in parsedCards"
-                  :key="index"
-                  class="bg-elevated"
-                  variant="subtle"
-                >
-                  <div class="flex flex-col sm:flex-row">
-                    <UTextarea
-                      v-model="c.term"
-                      :rows="1"
-                      :maxrows="10"
-                      :ui="{
-                        base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                      }"
-                      class="w-full"
-                      variant="ghost"
-                      disabled
-                      autoresize
-                    />
-
-                    <USeparator class="m-2 sm:hidden" />
-
-                    <USeparator
-                      orientation="vertical"
-                      class="m-2 hidden h-auto sm:block"
-                    />
-
-                    <UTextarea
-                      v-model="c.definition"
-                      :rows="1"
-                      :maxrows="10"
-                      :ui="{
-                        base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
-                      }"
-                      class="w-full"
-                      variant="ghost"
-                      disabled
-                      autoresize
-                    />
-                  </div>
-                </UCard>
-              </div>
-            </UForm>
-          </template>
-
-          <template #footer>
-            <div class="flex flex-1 place-content-end gap-2">
-              <UButton
-                class="cursor-pointer"
-                label="Cancel"
-                icon="i-lucide-x"
-                color="neutral"
-                variant="outline"
-                @click="isImportModalOpen = false"
-              />
-
-              <UButton
-                class="cursor-pointer"
-                label="Import"
-                icon="i-lucide-copy-plus"
-                variant="subtle"
-                size="lg"
-                type="submit"
-                form="import-form"
-              />
-            </div>
-          </template>
-        </UModal>
+        <UButton
+          class="cursor-pointer"
+          label="Import cards"
+          icon="i-lucide-download"
+          variant="soft"
+          color="secondary"
+          @click="isImportModalOpen = true"
+        />
       </div>
 
       <div class="flex flex-col gap-4">
         <TransitionGroup name="list">
           <UCard
-            v-for="(c, index) in createState.cards"
+            v-for="(card, index) in createState.cards"
             :key="index"
             class="bg-elevated"
             variant="subtle"
@@ -543,15 +321,15 @@ async function onError(event: FormErrorEvent) {
                   </span>
 
                   <USelectMenu
-                    v-model="termLanguageCode"
-                    :items="termLanguageCodeItems"
+                    v-model="card.termLanguage"
+                    :items="termLanguageItems"
                     value-key="id"
                   />
                 </div>
 
                 <UFormField class="sm:flex-1" :name="`cards.${index}.term`">
                   <UTextarea
-                    v-model="c.term"
+                    v-model="card.term"
                     :rows="1"
                     :maxrows="10"
                     :ui="{ base: 'text-base font-medium' }"
@@ -561,16 +339,45 @@ async function onError(event: FormErrorEvent) {
                   />
                 </UFormField>
 
-                <!-- <div class="grid grid-cols-2 gap-1">
-                  <UInput
-                    :ui="{ base: 'text-base' }"
-                    placeholder="part of speech..."
-                  />
-                  <UInput
-                    :ui="{ base: 'text-base' }"
-                    placeholder="pronunciation..."
-                  />
-                </div> -->
+                <div v-if="isWord(card.term)" class="flex gap-1">
+                  <UFormField
+                    class="flex-1"
+                    :name="`cards.${index}.partOfSpeech`"
+                  >
+                    <UInput
+                      v-model="card.partOfSpeech"
+                      :ui="{ base: 'text-base' }"
+                      class="w-full"
+                      placeholder="part of speech"
+                    />
+                  </UFormField>
+
+                  <UFormField
+                    class="flex-1"
+                    :name="`cards.${index}.pronunciation`"
+                  >
+                    <UInput
+                      v-model="card.pronunciation"
+                      :ui="{ base: 'text-base' }"
+                      class="w-full"
+                      placeholder="pronunciation"
+                    />
+                  </UFormField>
+                </div>
+
+                <div v-else>
+                  <UFormField
+                    class="flex-1"
+                    :name="`cards.${index}.usageOrGrammar`"
+                  >
+                    <UInput
+                      v-model="card.usageOrGrammar"
+                      :ui="{ base: 'text-base' }"
+                      class="w-full"
+                      placeholder="usage or grammar notes"
+                    />
+                  </UFormField>
+                </div>
               </div>
 
               <USeparator class="sm:hidden" />
@@ -578,8 +385,8 @@ async function onError(event: FormErrorEvent) {
               <div class="flex h-fit flex-col gap-2">
                 <USelectMenu
                   class="place-self-end"
-                  v-model="definitionLanguageCode"
-                  :items="definitionLanguageCodeItems"
+                  v-model="card.definitionLanguage"
+                  :items="definitionLanguageItems"
                   value-key="id"
                 />
 
@@ -588,7 +395,7 @@ async function onError(event: FormErrorEvent) {
                   :name="`cards.${index}.definition`"
                 >
                   <UTextarea
-                    v-model="c.definition"
+                    v-model="card.definition"
                     :rows="1"
                     :maxrows="10"
                     :ui="{ base: 'text-base font-medium' }"
@@ -598,10 +405,14 @@ async function onError(event: FormErrorEvent) {
                   />
                 </UFormField>
 
-                <!-- <UInput
-                  :ui="{ base: 'text-base' }"
-                  placeholder="example sentence 1..."
-                /> -->
+                <UFormField class="sm:flex-1" :name="`cards.${index}.example`">
+                  <UInput
+                    v-model="card.example"
+                    :ui="{ base: 'text-base' }"
+                    class="w-full"
+                    placeholder="example"
+                  />
+                </UFormField>
               </div>
             </div>
 
@@ -623,11 +434,7 @@ async function onError(event: FormErrorEvent) {
               term: '',
               definition: '',
               termLanguage: 'en',
-              definitionLanguage: 'en',
-              pronunciation: '',
-              partOfSpeech: '',
-              usageOrGrammar: '',
-              example: '',
+              definitionLanguage: 'vi',
             })
           "
         >
@@ -640,7 +447,230 @@ async function onError(event: FormErrorEvent) {
           </div>
         </UCard>
       </div>
+
+      <!-- Visibility Modal -->
+      <UModal
+        v-model:open="isVisibilityModalOpen"
+        :ui="{ title: 'text-lg sm:text-xl' }"
+        title="Manage your deck access"
+      >
+        <template #body>
+          <UFormField
+            :help="getVisibilityDesc(createState.visibility)"
+            label="Visibility"
+            name="visibility"
+          >
+            <USelect
+              v-model="createState.visibility"
+              :items="visibilityItems"
+              :icon="getVisibilityIcon(createState.visibility)"
+              :ui="{ content: 'min-w-fit' }"
+              value-key="id"
+            />
+          </UFormField>
+
+          <UFormField
+            v-if="createState.visibility === Visibility.PROTECTED"
+            class="mt-2"
+            label="Passcode"
+            name="passcode"
+            required
+          >
+            <UInput
+              ref="passcodeInput"
+              v-model="createState.passcode"
+              @keydown.enter="isVisibilityModalOpen = false"
+              @vue:mounted="onPasscodeInputMounted"
+            />
+          </UFormField>
+        </template>
+      </UModal>
     </UForm>
+
+    <!-- Import Cards Modal -->
+    <UModal
+      v-model:open="isImportModalOpen"
+      :ui="{
+        title: 'text-xl sm:text-2xl',
+        content:
+          'sm:inset-x-16 sm:inset-y-8 lg:inset-x-32 lg:inset-y-16 sm:rounded-md',
+      }"
+      title="Import your cards"
+      description="Copy and Paste your data here (from Word, Excel, Google Docs, CSV Files, etc.)"
+      fullscreen
+    >
+      <template #body>
+        <!-- Import Cards Form -->
+        <UForm
+          id="import-form"
+          :schema="importCardsSchema"
+          :state="importState"
+          class="flex flex-col gap-4"
+          @submit="onImportSubmit"
+        >
+          <UFormField name="input">
+            <UTextarea
+              v-model="importState.input"
+              :rows="7"
+              :maxrows="10"
+              class="w-full"
+              variant="subtle"
+              placeholder="Paste your data here..."
+              autoresize
+              autofocus
+            />
+          </UFormField>
+
+          <div
+            class="flex flex-col place-items-start gap-3 sm:flex-row sm:gap-6"
+          >
+            <div class="flex place-items-center gap-2">
+              <UFormField
+                :ui="{
+                  help: 'whitespace-pre-wrap',
+                }"
+                :help="contentSeparatorPreview"
+                name="contentSeparator"
+              >
+                <USelect
+                  v-model="importState.contentSeparator"
+                  :items="contentSeparatorItems"
+                  class="w-full"
+                  variant="subtle"
+                  value-key="id"
+                />
+
+                <template #label>
+                  <h3 class="truncate font-semibold sm:text-lg">
+                    Content separator
+                  </h3>
+                </template>
+              </UFormField>
+
+              <UFormField
+                v-if="importState.contentSeparator === 'custom'"
+                name="customContentSeparator"
+              >
+                <UInput
+                  v-model="importState.customContentSeparator"
+                  class="mt-1"
+                  placeholder="eg. -"
+                />
+              </UFormField>
+            </div>
+
+            <div class="flex place-items-center gap-2">
+              <UFormField
+                :ui="{
+                  help: 'whitespace-pre-wrap',
+                }"
+                :help="cardSeparatorPreview"
+                name="cardSeparator"
+              >
+                <USelect
+                  v-model="importState.cardSeparator"
+                  :items="cardSeparatorItems"
+                  class="w-full"
+                  variant="subtle"
+                  value-key="id"
+                />
+
+                <template #label>
+                  <h3 class="truncate font-semibold sm:text-lg">
+                    Card separator
+                  </h3>
+                </template>
+              </UFormField>
+
+              <UFormField
+                v-if="importState.cardSeparator === 'custom'"
+                name="customCardSeparator"
+              >
+                <UInput
+                  v-model="importState.customCardSeparator"
+                  class="mt-1"
+                  placeholder="eg. \"
+                />
+              </UFormField>
+            </div>
+          </div>
+
+          <h3 class="font-semibold sm:text-lg">
+            Preview
+            <span class="text-base font-normal"
+              >{{ parsedCards.length }} cards</span
+            >
+          </h3>
+
+          <div class="flex flex-col gap-4">
+            <UCard
+              v-for="(c, index) in parsedCards"
+              :key="index"
+              class="bg-elevated"
+              variant="subtle"
+            >
+              <div class="flex flex-col sm:flex-row">
+                <UTextarea
+                  v-model="c.term"
+                  :rows="1"
+                  :maxrows="10"
+                  :ui="{
+                    base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                  }"
+                  class="w-full"
+                  variant="ghost"
+                  disabled
+                  autoresize
+                />
+
+                <USeparator class="m-2 sm:hidden" />
+
+                <USeparator
+                  orientation="vertical"
+                  class="m-2 hidden h-auto sm:block"
+                />
+
+                <UTextarea
+                  v-model="c.definition"
+                  :rows="1"
+                  :maxrows="10"
+                  :ui="{
+                    base: 'sm:text-lg font-medium disabled:opacity-100 disabled:cursor-default',
+                  }"
+                  class="w-full"
+                  variant="ghost"
+                  disabled
+                  autoresize
+                />
+              </div>
+            </UCard>
+          </div>
+        </UForm>
+      </template>
+
+      <template #footer>
+        <div class="flex flex-1 place-content-end gap-2">
+          <UButton
+            class="cursor-pointer"
+            label="Cancel"
+            icon="i-lucide-x"
+            color="neutral"
+            variant="outline"
+            @click="isImportModalOpen = false"
+          />
+
+          <UButton
+            class="cursor-pointer"
+            label="Import"
+            icon="i-lucide-copy-plus"
+            variant="subtle"
+            size="lg"
+            type="submit"
+            form="import-form"
+          />
+        </div>
+      </template>
+    </UModal>
   </UContainer>
 </template>
 

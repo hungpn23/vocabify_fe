@@ -49,20 +49,20 @@ export const cardSeparatorItems = ref<
   },
 ]);
 
-export const termLanguageCodeItems = ref<
-  (SelectMenuItem & { id: LanguageCode })[]
->([
-  {
-    id: 'en',
-    label: 'English',
-  },
-  {
-    id: 'vi',
-    label: 'Vietnamese',
-  },
-]);
+export const termLanguageItems = ref<(SelectMenuItem & { id: LanguageCode })[]>(
+  [
+    {
+      id: 'en',
+      label: 'English',
+    },
+    {
+      id: 'vi',
+      label: 'Vietnamese',
+    },
+  ],
+);
 
-export const definitionLanguageCodeItems = ref<
+export const definitionLanguageItems = ref<
   (SelectMenuItem & { id: LanguageCode })[]
 >([
   {
