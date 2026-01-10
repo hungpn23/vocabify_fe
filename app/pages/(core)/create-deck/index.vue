@@ -15,52 +15,42 @@ import {
   termLanguageItems,
   definitionLanguageItems,
 } from './select-items';
+import type { UTextarea } from '#components';
+
+const NEW_CARD: CreateCardSchema = {
+  term: '',
+  definition: '',
+  termLanguage: 'en',
+  definitionLanguage: 'vi',
+  examples: [''],
+};
 
 const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
 
-const passcodeInput = useTemplateRef('passcodeInput');
+const passcodeInputRef = useTemplateRef('passcode');
+const definitionRef = useTemplateRef('definition');
 
 const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
 const formErrorMsg = ref('');
 
+const suggestion = reactive({
+  cardIndex: -1,
+  definition: '',
+  pronunciation: '',
+  partOfSpeech: '',
+  usageOrGrammar: '',
+  examples: [''],
+});
+
 const createState = reactive<CreateDeckSchema>({
   name: '',
   description: '',
   visibility: Visibility.PUBLIC,
-  cards: [
-    {
-      term: '',
-      definition: '',
-      termLanguage: 'en',
-      definitionLanguage: 'vi',
-      examples: [],
-    },
-    {
-      term: '',
-      definition: '',
-      termLanguage: 'en',
-      definitionLanguage: 'vi',
-      examples: [],
-    },
-    {
-      term: '',
-      definition: '',
-      termLanguage: 'en',
-      definitionLanguage: 'vi',
-      examples: [],
-    },
-    {
-      term: '',
-      definition: '',
-      termLanguage: 'en',
-      definitionLanguage: 'vi',
-      examples: [],
-    },
-  ],
+  cards: [{ ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }],
 });
 
 const importState = reactive({
@@ -110,17 +100,50 @@ const parsedCards = computed(() => {
   });
 });
 
-watch(
-  () => createState.visibility,
-  (newVisibility) => {
-    createState.passcode =
-      newVisibility === Visibility.PROTECTED ? '' : undefined;
+const debouncedGetCardSuggestion = useDebounceFn(
+  async (card: CreateCardSchema, cardIndex: number) => {
+    const { term, termLanguage, definitionLanguage } = card;
+
+    $fetch<CardSuggestion>('/api/suggestion/card', {
+      method: 'POST',
+      headers: { Authorization: token.value || '' },
+      body: { term, termLanguage, definitionLanguage },
+    })
+      .then((res) => {
+        suggestion.cardIndex = cardIndex;
+        suggestion.definition = res.definition;
+        suggestion.pronunciation = res.pronunciation || '';
+        suggestion.partOfSpeech = res.partOfSpeech || '';
+        suggestion.usageOrGrammar = res.usageOrGrammar || '';
+        suggestion.examples = res.examples.length ? res.examples : [''];
+      })
+      .catch(() => {});
   },
+  500,
 );
+
+function isSuggestingThisCard(index: number) {
+  return suggestion.cardIndex === index;
+}
+
+function hasSuggestion(card: CreateCardSchema) {
+  return !card.definition || !!suggestion.definition;
+}
+
+function applySuggestion(card: CreateCardSchema, index: number) {
+  if (!hasSuggestion(card)) return;
+
+  card.definition = suggestion.definition;
+  card.partOfSpeech = suggestion.partOfSpeech;
+  card.pronunciation = suggestion.pronunciation;
+  card.examples = suggestion.examples.length ? suggestion.examples : [''];
+
+  definitionRef.value![index]?.textareaRef.focus();
+}
 
 function onPasscodeInputMounted() {
   setTimeout(() => {
-    passcodeInput.value?.inputRef?.focus();
+    passcodeInputRef.value?.inputRef?.focus();
   }, 300);
 }
 
@@ -330,7 +353,10 @@ async function onError(event: FormErrorEvent) {
                     class="w-full"
                     placeholder="Enter your term..."
                     autoresize
-                    @update:model-value="console.log('suggesting...')"
+                    @update:model-value="
+                      () => debouncedGetCardSuggestion(card, cIndex)
+                    "
+                    @keydown.tab.prevent="() => applySuggestion(card, cIndex)"
                   />
                 </UFormField>
 
@@ -342,7 +368,11 @@ async function onError(event: FormErrorEvent) {
                     <UInput
                       v-model="card.partOfSpeech"
                       class="w-full"
-                      placeholder="eg. noun"
+                      :placeholder="
+                        isSuggestingThisCard(cIndex)
+                          ? suggestion.partOfSpeech
+                          : 'eg. noun'
+                      "
                       @vue:before-unmount="card.partOfSpeech = undefined"
                     />
                   </UFormField>
@@ -354,7 +384,11 @@ async function onError(event: FormErrorEvent) {
                     <UInput
                       v-model="card.pronunciation"
                       class="w-full"
-                      placeholder="eg. /heˈloʊ/"
+                      :placeholder="
+                        isSuggestingThisCard(cIndex)
+                          ? suggestion.pronunciation
+                          : 'eg. /heˈloʊ/'
+                      "
                       @vue:before-unmount="card.pronunciation = undefined"
                     />
                   </UFormField>
@@ -368,11 +402,22 @@ async function onError(event: FormErrorEvent) {
                     <UInput
                       v-model="card.usageOrGrammar"
                       class="w-full"
-                      placeholder="Enter your usage or grammar notes"
+                      :placeholder="
+                        isSuggestingThisCard(cIndex)
+                          ? suggestion.usageOrGrammar
+                          : 'Enter your usage or grammar notes'
+                      "
                       @vue:before-unmount="card.usageOrGrammar = undefined"
                     />
                   </UFormField>
                 </div>
+
+                <span
+                  v-if="isSuggestingThisCard(cIndex) && hasSuggestion(card)"
+                  class="text-muted text-sm"
+                >
+                  Press <AppKbd label="Tab" /> to accept suggestion.
+                </span>
               </div>
 
               <USeparator class="sm:hidden" />
@@ -387,12 +432,17 @@ async function onError(event: FormErrorEvent) {
 
                 <UFormField class="flex-1" :name="`cards.${cIndex}.definition`">
                   <UTextarea
+                    ref="definition"
                     v-model="card.definition"
                     :rows="1"
                     :maxrows="10"
                     :ui="{ base: 'text-base' }"
+                    :placeholder="
+                      isSuggestingThisCard(cIndex)
+                        ? suggestion.definition
+                        : 'Enter your definition...'
+                    "
                     class="w-full"
-                    placeholder="Enter your definition..."
                     autoresize
                   />
                 </UFormField>
@@ -406,7 +456,11 @@ async function onError(event: FormErrorEvent) {
                   <UInput
                     v-model="card.examples[eIndex]"
                     class="w-full"
-                    placeholder="eg. Hello, how are you?"
+                    :placeholder="
+                      isSuggestingThisCard(cIndex)
+                        ? suggestion.examples[eIndex]
+                        : 'eg. Hello, how are you?'
+                    "
                   >
                     <template #trailing>
                       <UButton
@@ -444,15 +498,7 @@ async function onError(event: FormErrorEvent) {
 
         <UCard
           class="hover:border-primary/75 hover:text-primary/75 border-accented text-muted flex h-28 cursor-pointer place-content-center place-items-center border-2 border-dashed ring-0 transition-all select-none active:scale-95"
-          @click="
-            createState.cards.push({
-              term: '',
-              definition: '',
-              termLanguage: 'en',
-              definitionLanguage: 'vi',
-              examples: [],
-            } satisfies CreateCardSchema)
-          "
+          @click="createState.cards.push({ ...NEW_CARD })"
         >
           <div class="flex place-content-center place-items-center gap-2">
             <UIcon name="i-lucide-plus" class="size-8" />
@@ -482,6 +528,12 @@ async function onError(event: FormErrorEvent) {
               :icon="getVisibilityIcon(createState.visibility)"
               :ui="{ content: 'min-w-fit' }"
               value-key="id"
+              @change="
+                createState.passcode =
+                  createState.visibility === Visibility.PROTECTED
+                    ? ''
+                    : undefined
+              "
             />
           </UFormField>
 
@@ -493,7 +545,7 @@ async function onError(event: FormErrorEvent) {
             required
           >
             <UInput
-              ref="passcodeInput"
+              ref="passcode"
               v-model="createState.passcode"
               @keydown.enter="isVisibilityModalOpen = false"
               @vue:mounted="onPasscodeInputMounted"

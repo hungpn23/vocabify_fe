@@ -10,7 +10,7 @@ defineProps<{
 
 <template>
   <kbd
-    class="mx-1 inline-flex h-[27px] min-w-10 place-content-center place-items-center rounded border border-b-2 border-gray-300 bg-white px-1.5 text-center text-xs font-semibold shadow-md dark:border-gray-500 dark:bg-gray-800"
+    class="mx-1 inline-flex h-6.75 min-w-10 place-content-center place-items-center rounded border border-b-2 border-gray-300 bg-white px-1.5 text-center text-xs font-semibold shadow-md dark:border-gray-500 dark:bg-gray-800"
   >
     <UIcon
       v-if="icon?.name"

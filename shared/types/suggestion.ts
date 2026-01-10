@@ -3,5 +3,5 @@ export type CardSuggestion = {
   pronunciation?: string;
   partOfSpeech?: string;
   usageOrGrammar?: string;
-  examples?: string[];
+  examples: string[];
 };
