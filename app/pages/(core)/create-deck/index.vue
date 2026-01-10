@@ -3,6 +3,7 @@ import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui';
 import {
   createDeckSchema,
   importCardsSchema,
+  type CreateCardSchema,
   type CreateDeckSchema,
   type ImportCardsSchema,
 } from './schemas';
@@ -36,24 +37,28 @@ const createState = reactive<CreateDeckSchema>({
       definition: '',
       termLanguage: 'en',
       definitionLanguage: 'vi',
+      examples: [],
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
       definitionLanguage: 'vi',
+      examples: [],
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
       definitionLanguage: 'vi',
+      examples: [],
     },
     {
       term: '',
       definition: '',
       termLanguage: 'en',
       definitionLanguage: 'vi',
+      examples: [],
     },
   ],
 });
@@ -124,7 +129,6 @@ function isWord(term: string) {
 }
 
 async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
-  console.log(`🚀 ~ onCreateSubmit ~ event:`, event);
   formErrorMsg.value = '';
   if (isSubmitting.value) return;
   isSubmitting.value = true;
@@ -166,16 +170,7 @@ async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
     importState.customCardSeparator,
   );
 
-  if (!sep || !cardSep) {
-    toast.add({
-      title: 'Error importing cards',
-      description: 'Invalid custom content or card separator',
-      color: 'error',
-      duration: 2000,
-    });
-
-    return;
-  }
+  if (!sep || !cardSep) return;
 
   const importCards = event.data.input
     .split(cardSep)
@@ -183,12 +178,15 @@ async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
     .map((card) => {
       const [term = '', definition = ''] = card.split(sep);
 
-      return {
+      const newCard: CreateCardSchema = {
         term,
         definition,
-        termLanguage: 'en' as LanguageCode,
-        definitionLanguage: 'en' as LanguageCode,
+        termLanguage: 'en',
+        definitionLanguage: 'vi',
+        examples: [],
       };
+
+      return newCard;
     });
 
   const currentCards = createState.cards.filter(
@@ -199,11 +197,7 @@ async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
 
   isImportModalOpen.value = false;
 
-  toast.add({
-    title: 'Successfully imported!',
-    color: 'success',
-    duration: 2000,
-  });
+  toast.add({ title: 'Successfully imported!', color: 'success' });
 }
 
 async function onError(event: FormErrorEvent) {
@@ -308,8 +302,8 @@ async function onError(event: FormErrorEvent) {
       <div class="flex flex-col gap-4">
         <TransitionGroup name="list">
           <UCard
-            v-for="(card, index) in createState.cards"
-            :key="index"
+            v-for="(card, cIndex) in createState.cards"
+            :key="cIndex"
             class="bg-elevated"
             variant="subtle"
           >
@@ -317,7 +311,7 @@ async function onError(event: FormErrorEvent) {
               <div class="flex h-fit flex-col gap-2">
                 <div class="flex place-content-between place-items-center">
                   <span class="text-base font-medium sm:text-lg">
-                    {{ index + 1 }}
+                    {{ cIndex + 1 }}
                   </span>
 
                   <USelectMenu
@@ -327,40 +321,41 @@ async function onError(event: FormErrorEvent) {
                   />
                 </div>
 
-                <UFormField class="sm:flex-1" :name="`cards.${index}.term`">
+                <UFormField class="flex-1" :name="`cards.${cIndex}.term`">
                   <UTextarea
                     v-model="card.term"
                     :rows="1"
                     :maxrows="10"
-                    :ui="{ base: 'text-base font-medium' }"
+                    :ui="{ base: 'text-base' }"
                     class="w-full"
                     placeholder="Enter your term..."
                     autoresize
+                    @update:model-value="console.log('suggesting...')"
                   />
                 </UFormField>
 
                 <div v-if="isWord(card.term)" class="flex gap-1">
                   <UFormField
-                    class="flex-1"
-                    :name="`cards.${index}.partOfSpeech`"
+                    class="max-w-30"
+                    :name="`cards.${cIndex}.partOfSpeech`"
                   >
                     <UInput
                       v-model="card.partOfSpeech"
-                      :ui="{ base: 'text-base' }"
                       class="w-full"
-                      placeholder="part of speech"
+                      placeholder="eg. noun"
+                      @vue:before-unmount="card.partOfSpeech = undefined"
                     />
                   </UFormField>
 
                   <UFormField
-                    class="flex-1"
-                    :name="`cards.${index}.pronunciation`"
+                    class="grow"
+                    :name="`cards.${cIndex}.pronunciation`"
                   >
                     <UInput
                       v-model="card.pronunciation"
-                      :ui="{ base: 'text-base' }"
                       class="w-full"
-                      placeholder="pronunciation"
+                      placeholder="eg. /heˈloʊ/"
+                      @vue:before-unmount="card.pronunciation = undefined"
                     />
                   </UFormField>
                 </div>
@@ -368,13 +363,13 @@ async function onError(event: FormErrorEvent) {
                 <div v-else>
                   <UFormField
                     class="flex-1"
-                    :name="`cards.${index}.usageOrGrammar`"
+                    :name="`cards.${cIndex}.usageOrGrammar`"
                   >
                     <UInput
                       v-model="card.usageOrGrammar"
-                      :ui="{ base: 'text-base' }"
                       class="w-full"
-                      placeholder="usage or grammar notes"
+                      placeholder="Enter your usage or grammar notes"
+                      @vue:before-unmount="card.usageOrGrammar = undefined"
                     />
                   </UFormField>
                 </div>
@@ -390,29 +385,49 @@ async function onError(event: FormErrorEvent) {
                   value-key="id"
                 />
 
-                <UFormField
-                  class="sm:flex-1"
-                  :name="`cards.${index}.definition`"
-                >
+                <UFormField class="flex-1" :name="`cards.${cIndex}.definition`">
                   <UTextarea
                     v-model="card.definition"
                     :rows="1"
                     :maxrows="10"
-                    :ui="{ base: 'text-base font-medium' }"
+                    :ui="{ base: 'text-base' }"
                     class="w-full"
                     placeholder="Enter your definition..."
                     autoresize
                   />
                 </UFormField>
 
-                <UFormField class="sm:flex-1" :name="`cards.${index}.example`">
+                <UFormField
+                  v-if="card.examples.length"
+                  v-for="(_, eIndex) in card.examples"
+                  class="flex-1"
+                  :name="`cards.${cIndex}.examples.${eIndex}`"
+                >
                   <UInput
-                    v-model="card.example"
-                    :ui="{ base: 'text-base' }"
+                    v-model="card.examples[eIndex]"
                     class="w-full"
-                    placeholder="example"
-                  />
+                    placeholder="eg. Hello, how are you?"
+                  >
+                    <template #trailing>
+                      <UButton
+                        icon="i-lucide-x"
+                        variant="ghost"
+                        color="error"
+                        size="sm"
+                        tabindex="-1"
+                        @click="card.examples.splice(eIndex, 1)"
+                      />
+                    </template>
+                  </UInput>
                 </UFormField>
+
+                <UButton
+                  class="w-fit"
+                  icon="i-lucide-plus"
+                  label="Add new example"
+                  variant="ghost"
+                  @click="card.examples.push('')"
+                />
               </div>
             </div>
 
@@ -422,7 +437,7 @@ async function onError(event: FormErrorEvent) {
               icon="i-lucide-trash-2"
               color="error"
               variant="ghost"
-              @click="createState.cards.splice(index, 1)"
+              @click="createState.cards.splice(cIndex, 1)"
             />
           </UCard>
         </TransitionGroup>
@@ -435,7 +450,8 @@ async function onError(event: FormErrorEvent) {
               definition: '',
               termLanguage: 'en',
               definitionLanguage: 'vi',
-            })
+              examples: [],
+            } satisfies CreateCardSchema)
           "
         >
           <div class="flex place-content-center place-items-center gap-2">
@@ -451,7 +467,7 @@ async function onError(event: FormErrorEvent) {
       <!-- Visibility Modal -->
       <UModal
         v-model:open="isVisibilityModalOpen"
-        :ui="{ title: 'text-lg sm:text-xl' }"
+        :ui="{ title: 'text-base sm:text-lg font-medium' }"
         title="Manage your deck access"
       >
         <template #body>

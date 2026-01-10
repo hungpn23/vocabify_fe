@@ -8,7 +8,7 @@ export const createCardSchema = v.object({
   pronunciation: v.optional(v.string()),
   partOfSpeech: v.optional(v.string()),
   usageOrGrammar: v.optional(v.string()),
-  example: v.optional(v.string()),
+  examples: v.array(v.pipe(v.string(), v.nonEmpty('Example cannot be empty'))),
 });
 
 export const createDeckSchema = v.object({
