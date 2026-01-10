@@ -29,7 +29,7 @@ const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
 
-const passcodeInputRef = useTemplateRef('passcode');
+const passcodeRef = useTemplateRef('passcode');
 const definitionRef = useTemplateRef('definition');
 
 const isVisibilityModalOpen = ref(false);
@@ -37,13 +37,10 @@ const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
 const formErrorMsg = ref('');
 
-const suggestion = reactive({
-  cardIndex: -1,
+const suggestion = reactive<CardSuggestion>({
+  currentCardIndex: -1,
   definition: '',
-  pronunciation: '',
-  partOfSpeech: '',
-  usageOrGrammar: '',
-  examples: [''],
+  examples: [],
 });
 
 const createState = reactive<CreateDeckSchema>({
@@ -110,7 +107,7 @@ const debouncedGetCardSuggestion = useDebounceFn(
       body: { term, termLanguage, definitionLanguage },
     })
       .then((res) => {
-        suggestion.cardIndex = cardIndex;
+        suggestion.currentCardIndex = cardIndex;
         suggestion.definition = res.definition;
         suggestion.pronunciation = res.pronunciation || '';
         suggestion.partOfSpeech = res.partOfSpeech || '';
@@ -123,11 +120,11 @@ const debouncedGetCardSuggestion = useDebounceFn(
 );
 
 function isSuggestingThisCard(index: number) {
-  return suggestion.cardIndex === index;
+  return suggestion.currentCardIndex === index;
 }
 
 function hasSuggestion(card: CreateCardSchema) {
-  return !card.definition || !!suggestion.definition;
+  return !card.definition && !!suggestion.definition;
 }
 
 function applySuggestion(card: CreateCardSchema, index: number) {
@@ -143,7 +140,7 @@ function applySuggestion(card: CreateCardSchema, index: number) {
 
 function onPasscodeInputMounted() {
   setTimeout(() => {
-    passcodeInputRef.value?.inputRef?.focus();
+    passcodeRef.value?.inputRef?.focus();
   }, 300);
 }
 
