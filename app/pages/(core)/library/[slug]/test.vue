@@ -228,95 +228,19 @@ onMounted(() => {
         label="Back to Home"
       />
 
-      <!-- Right actions -->
       <div class="flex place-items-center place-self-end">
-        <UModal
-          v-model:open="isSettingOpen"
-          :fullscreen="!smAndLarger"
-          :ui="{
-            content: 'divide-none',
-            body: 'flex-initial pt-0 sm:pt-0',
-            footer: 'place-content-end',
-          }"
-          description="Let's customize your test"
-          @after:enter="snapshotSetting = JSON.stringify(setting)"
-          @after:leave="onSettingClosed"
-        >
-          <UButton
-            class="cursor-pointer place-self-end"
-            icon="i-lucide-settings"
-            variant="ghost"
-            color="neutral"
-            size="lg"
-            @click="isSettingOpen = true"
-          />
-
-          <template #title>
-            <span class="text-xl font-semibold sm:text-2xl">
-              Test settings
-            </span>
-          </template>
-
-          <template #body>
-            <div class="flex flex-col gap-2 font-medium">
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Number of questions</div>
-
-                <UInput
-                  v-model.number="setting.questionAmount"
-                  type="number"
-                  size="lg"
-                />
-              </div>
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Test all questions</div>
-
-                <USwitch v-model="setting.isIgnoreDate" />
-              </div>
-
-              <USeparator label="Answer format" />
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Question types</div>
-
-                <USelect
-                  v-model="setting.types"
-                  :items="questionTypeItems"
-                  :ui="{ content: 'min-w-fit' }"
-                  size="lg"
-                  value-key="value"
-                  multiple
-                />
-              </div>
-
-              <div class="flex place-content-between place-items-center gap-2">
-                <div>Answer with</div>
-
-                <USelect
-                  v-model="setting.direction"
-                  :items="questionDirectionItems"
-                  :ui="{ content: 'min-w-fit' }"
-                  size="lg"
-                />
-              </div>
-            </div>
-          </template>
-
-          <template #footer>
-            <UButton
-              class="cursor-pointer"
-              label="Apply"
-              color="neutral"
-              size="lg"
-              @click="isSettingOpen = false"
-            />
-          </template>
-        </UModal>
+        <UButton
+          class="cursor-pointer place-self-end"
+          icon="i-lucide-settings"
+          variant="ghost"
+          color="neutral"
+          size="lg"
+          @click="isSettingOpen = true"
+        />
       </div>
     </div>
 
-    <div v-if="session.questions.length" class="flex w-full flex-col gap-2">
+    <div v-if="session.questions.length" class="flex w-full flex-col gap-4">
       <h1
         class="mb-2 max-w-5/6 place-self-center truncate text-lg font-semibold sm:text-xl"
       >
@@ -329,7 +253,7 @@ onMounted(() => {
         ref="cards"
         :ui="{
           header: 'p-0 sm:px-0',
-          body: `flex-1 w-full flex flex-col gap-4 sm:gap-4 p-2`,
+          body: `flex-1 w-full flex flex-col gap-4 p-2`,
         }"
         class="bg-elevated mb-2 flex min-h-[30dvh] flex-col divide-none shadow-md transition-all sm:mb-4"
         @click="session.index = qIndex"
@@ -343,7 +267,12 @@ onMounted(() => {
               color="neutral"
               tabindex="-1"
             />
-            Term
+
+            {{
+              setting.direction === 'term_to_def'
+                ? `Term (${q.termLanguage})`
+                : `Definition (${q.definitionLanguage})`
+            }}
           </span>
 
           <UBadge
@@ -353,18 +282,18 @@ onMounted(() => {
           />
         </div>
 
-        <div class="text-xl font-medium sm:text-2xl">
+        <p class="text-xl font-medium sm:text-2xl">
           {{ q.question }}
-        </div>
+        </p>
 
         <div class="mt-2 flex w-full flex-col gap-2">
-          <span class="">
+          <em class="text-sm font-medium">
             {{
               q.type === 'multiple_choices'
                 ? 'Choose an answer'
                 : 'Type your answer'
             }}
-          </span>
+          </em>
 
           <!-- Multiple Choices Answer -->
           <div
@@ -416,17 +345,15 @@ onMounted(() => {
             />
           </div>
 
-          <div class="flex place-content-end place-items-center gap-2">
-            <UButton
-              v-if="!q.isMarkedAsDontKnow"
-              class="cursor-pointer place-self-end font-medium"
-              variant="ghost"
-              tabindex="-1"
-              @click.stop="onDontKnowClicked(q, qIndex)"
-            >
-              Mark as "Don't know"
-            </UButton>
-          </div>
+          <UButton
+            v-if="!q.isMarkedAsDontKnow"
+            class="cursor-pointer place-self-end font-medium"
+            variant="ghost"
+            tabindex="-1"
+            @click.stop="onDontKnowClicked(q, qIndex)"
+          >
+            Mark as "Don't know"
+          </UButton>
         </div>
       </UCard>
 
@@ -439,5 +366,78 @@ onMounted(() => {
         @click="onTestSubmitted"
       />
     </div>
+
+    <UModal
+      v-model:open="isSettingOpen"
+      :fullscreen="!smAndLarger"
+      :ui="{
+        content: 'divide-none',
+        body: 'flex-initial pt-0 sm:pt-0',
+        footer: 'place-content-end',
+      }"
+      description="Let's customize your test"
+      @after:enter="snapshotSetting = JSON.stringify(setting)"
+      @after:leave="onSettingClosed"
+    >
+      <template #title>
+        <span class="text-xl font-semibold sm:text-2xl"> Test settings </span>
+      </template>
+
+      <template #body>
+        <div class="flex flex-col gap-2 font-medium">
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Number of questions</div>
+
+            <UInput
+              v-model.number="setting.questionAmount"
+              type="number"
+              size="lg"
+            />
+          </div>
+
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Test all questions</div>
+
+            <USwitch v-model="setting.isIgnoreDate" />
+          </div>
+
+          <USeparator label="Answer format" />
+
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Question types</div>
+
+            <USelect
+              v-model="setting.types"
+              :items="questionTypeItems"
+              :ui="{ content: 'min-w-fit' }"
+              size="lg"
+              value-key="value"
+              multiple
+            />
+          </div>
+
+          <div class="flex place-content-between place-items-center gap-2">
+            <div>Answer with</div>
+
+            <USelect
+              v-model="setting.direction"
+              :items="questionDirectionItems"
+              :ui="{ content: 'min-w-fit' }"
+              size="lg"
+            />
+          </div>
+        </div>
+      </template>
+
+      <template #footer>
+        <UButton
+          class="cursor-pointer"
+          label="Apply"
+          color="neutral"
+          size="lg"
+          @click="isSettingOpen = false"
+        />
+      </template>
+    </UModal>
   </UContainer>
 </template>
