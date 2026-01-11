@@ -343,20 +343,63 @@ defineShortcuts({
                       @click.stop="console.log('TTS not implemented yet')"
                     />
 
-                    {{ !isFlipped ? 'Term' : 'Definition' }}
+                    <span>{{
+                      !isFlipped
+                        ? `Term (${session.currentCard.termLanguage})`
+                        : `Definition (${session.currentCard.definitionLanguage})`
+                    }}</span>
                   </span>
 
                   <CardStatusBadge :card="session.currentCard" />
                 </div>
 
                 <div
-                  class="text-center text-2xl font-semibold sm:px-8 sm:text-3xl"
+                  v-if="isFlipped"
+                  class="flex w-full flex-col place-content-evenly place-items-stretch gap-6 px-2 sm:flex-row"
                 >
-                  {{
-                    !isFlipped
-                      ? session.currentCard?.term
-                      : session.currentCard?.definition
-                  }}
+                  <div class="flex flex-col place-content-evenly gap-2">
+                    <div class="text-xl font-medium sm:text-2xl">
+                      {{ session.currentCard.definition }}
+                    </div>
+
+                    <div v-if="session.currentCard.examples.length">
+                      <p class="text-sm font-medium">Examples:</p>
+
+                      <ul class="list-disc pl-4">
+                        <li
+                          v-for="(example, i) in session.currentCard.examples"
+                          :key="i"
+                        >
+                          <em>
+                            {{ example }}
+
+                            <span v-if="!example.endsWith('.')">.</span>
+                          </em>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  <NuxtImg
+                    src="https://avatars.githubusercontent.com/u/177613774?v=4"
+                    alt="User avatar"
+                  />
+                </div>
+
+                <div v-else class="flex flex-col place-items-center sm:px-4">
+                  <div class="space-x-2">
+                    <span class="text-2xl font-medium sm:text-3xl">
+                      {{ session.currentCard.term }}
+                    </span>
+
+                    <span v-if="session.currentCard.partOfSpeech">
+                      ({{ session.currentCard.partOfSpeech }})
+                    </span>
+                  </div>
+
+                  <em v-if="session.currentCard.pronunciation">
+                    {{ session.currentCard.pronunciation }}
+                  </em>
                 </div>
 
                 <div />

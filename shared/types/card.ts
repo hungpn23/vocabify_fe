@@ -27,10 +27,10 @@ export type Card = {
   termLanguage: string;
   definition: string;
   definitionLanguage: string;
-  pronunciation: string;
-  partOfSpeech: string;
-  usageOrGrammar: string;
-  example: string;
+  pronunciation?: string;
+  partOfSpeech?: string;
+  usageOrGrammar?: string;
+  examples: string[];
   streak: number;
   reviewDate?: string;
   status: CardStatus;

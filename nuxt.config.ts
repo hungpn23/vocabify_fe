@@ -18,6 +18,7 @@ export default defineNuxtConfig({
     '@pinia/nuxt',
     'pinia-plugin-persistedstate/nuxt',
     '@formkit/auto-animate/nuxt',
+    '@nuxt/image',
   ],
 
   devtools: {
@@ -57,4 +58,10 @@ export default defineNuxtConfig({
       },
     },
   },
+
+  // vite: {
+  //   server: {
+  //     allowedHosts: ['<my-app>.nport.link'],
+  //   },
+  // },
 });
