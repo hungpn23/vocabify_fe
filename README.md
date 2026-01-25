@@ -8,7 +8,6 @@
 
 - **Framework:** Nuxt 4 (`^4.2.1`)
 - **UI Library:** Nuxt UI (`@nuxt/ui`), Tailwind CSS
-- **Content Management:** Nuxt Content v3 (`@nuxt/content`) - Used for Marketing/Docs pages.
 - **Authentication:** Sidebase Nuxt Auth (`@sidebase/nuxt-auth`) - Local provider strategy.
 - **Database:** `better-sqlite3` (Local SQLite database).
 - **State Management:** Vue Reactivity (Refs/Reactive) + Nuxt `useState`.

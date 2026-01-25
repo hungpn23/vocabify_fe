@@ -22,16 +22,16 @@ export default defineNuxtPlugin(() => {
 
   socket.on('connect', () => {
     socket.on('socketConnected', (message: string) => {
-      console.log('Server message:', message);
+      console.log('Connected to Socket.IO server.');
     });
   });
 
   socket.on('disconnect', () => {
-    console.log('Disconnected from Socket.IO server!');
+    console.log('Disconnected from Socket.IO server.');
   });
 
   socket.on('connect_error', (error) => {
-    console.error('Socket.IO connection error:', error);
+    console.error('Socket.IO connection error.');
   });
 
   return { provide: { socket } };

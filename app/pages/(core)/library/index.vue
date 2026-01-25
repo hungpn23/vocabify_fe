@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { formatTimeAgo } from '@vueuse/core';
+import { formatTimeAgo } from "@vueuse/core";
 
 const toast = useToast();
 const router = useRouter();
@@ -7,7 +7,7 @@ const { token, data: user } = useAuth();
 
 const { page, limit, filter, search, filterItems, query } = useDeckSearch();
 
-const input = useTemplateRef('input');
+const input = useTemplateRef("input");
 
 const totalRecords = computed(
   () => paginated.value?.metadata.totalRecords || 0,
@@ -20,15 +20,15 @@ const computedUserStatItems = computed(() =>
     const { currentStreak, longestStreak, totalCardsLearned, masteryRate } =
       userStats.value;
 
-    let value = '';
-    let bonus = '';
+    let value = "";
+    let bonus = "";
     if (index === 0) {
       value = currentStreak.toString();
       bonus = longestStreak.toString();
     } else if (index === 1) {
       value = totalCardsLearned.toString();
     } else if (index === 2) {
-      value = masteryRate.toString() + '%';
+      value = masteryRate.toString() + "%";
     }
 
     return { ...item, value, bonus };
@@ -39,21 +39,21 @@ const {
   data: paginated,
   error,
   status,
-} = useLazyFetch<Paginated<GetManyRes>, ErrorResponse>('/api/decks', {
+} = useLazyFetch<Paginated<GetManyRes>, ErrorResponse>("/api/decks", {
   query,
-  headers: { Authorization: token.value || '' },
+  headers: { Authorization: token.value || "" },
   server: false,
 });
 
 const { data: userStats, error: userStatsError } = await useFetch<
   UserStats,
   ErrorResponse
->('/api/study/stats', {
-  headers: { Authorization: token.value || '' },
+>("/api/study/stats", {
+  headers: { Authorization: token.value || "" },
 });
 
 watch([error, userStatsError], (newErr) => {
-  if (newErr) toast.add({ title: 'Error fetching decks' });
+  if (newErr) toast.add({ title: "Error fetching decks" });
 });
 
 function getDeckProgress(deck: GetManyRes) {
@@ -66,11 +66,11 @@ function getDeckProgress(deck: GetManyRes) {
 }
 
 defineShortcuts({
-  '/': () => {
+  "/": () => {
     input.value?.inputRef?.focus();
   },
   a: () => {
-    router.push('/create-deck');
+    router.push("/create-deck");
   },
 });
 </script>
@@ -89,7 +89,7 @@ defineShortcuts({
     >
       <template #title> Welcome back, {{ user?.username }}! </template>
 
-      <template #description>
+      <!-- <template #description>
         <ProseBlockquote>
           {{ getDailyQuote()?.text }}
 
@@ -101,7 +101,7 @@ defineShortcuts({
             </span>
           </span>
         </ProseBlockquote>
-      </template>
+      </template> -->
 
       <div class="flex flex-col gap-2 sm:flex-row sm:gap-4">
         <UPageCard
@@ -211,7 +211,7 @@ defineShortcuts({
                   {{
                     d.openedAt
                       ? `Last opened ${formatTimeAgo(new Date(d.openedAt))}`
-                      : 'Never opened'
+                      : "Never opened"
                   }}
                 </div>
               </div>
