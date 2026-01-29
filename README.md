@@ -1,70 +1,211 @@
-# Better Quizlet
+# Vocabify Frontend
 
-## Overview
+A modern vocabulary learning application built with **Nuxt 4** and **Vue 3**, featuring a spaced repetition system for effective memorization.
 
-**Better Quizlet** is a flashcard and study application built on **Nuxt 4**. It integrates a fluent frontend with a robust application backend for creating, managing, and studying flashcard decks.
+---
 
-**Key Technologies:**
+## 🎯 Features
 
-- **Framework:** Nuxt 4 (`^4.2.1`)
-- **UI Library:** Nuxt UI (`@nuxt/ui`), Tailwind CSS
-- **Authentication:** Sidebase Nuxt Auth (`@sidebase/nuxt-auth`) - Local provider strategy.
-- **Database:** `better-sqlite3` (Local SQLite database).
-- **State Management:** Vue Reactivity (Refs/Reactive) + Nuxt `useState`.
-- **Validation:** `valibot`.
-- **Package Manager:** pnpm
+### 📚 Deck Management
+- **Create Decks**: Build vocabulary decks with custom cards (term, definition, pronunciation, part of speech, examples)
+- **Edit Decks**: Modify deck content with live validation
+- **Visibility Control**: Set decks as PUBLIC/PROTECTED/PRIVATE
+- **Clone Decks**: Clone shared decks to personal library
+- **Statistics**: Track progress with deck stats (known, learning, new cards)
 
-## Architecture & Structure
+### 🎴 Three Study Modes
 
-### Directory Map
+#### 1. Flashcards
+- Classic flip-card review
+- **Know / Don't Know** tracking
+- Auto-save progress with debounced API calls
+- Retry queue for missed cards
+- Shuffle functionality
 
-- **`app/`**: The core Vue application.
-  - **`components/`**: Reusable UI components.
-    - `Flashcard.vue`: Core study component handling card flipping, answering, and state (known/skipped).
-    - `Skeleton/`: Loading state components.
-  - **`pages/`**: Application routing.
-    - `[username]/[slug]/`: Nested routes for deck viewing and studying (`learn.vue`, `flashcards.vue`).
-    - `create-deck.vue`: Deck creation interface.
-  - **`utils/`**: Logic helpers for card state (`calcCardState.ts`), shuffling, and text processing.
-- **`content/`**: Data-driven content for marketing pages (YAML/Markdown).
-- **`server/api/`**: Act like a proxy server.
-- **`shared/types/`**: Shared TypeScript interfaces (`card.ts`, `deck.ts`, `branded.ts`).
-- **`nuxt.config.ts`**: Main configuration (Auth provider, Modules).
+#### 2. Learn Mode
+- **Multiple choice** and **written answer** questions
+- Bi-directional practice (term → definition, definition → term)
+- Hint system with streak penalty
+- Progress tracking with spaced repetition
 
-### Key Features
+#### 3. Test Mode
+- Quiz-style assessment
+- Configurable question amount
+- Multiple question types
+- Results summary with correct/incorrect breakdown
 
-1.  **Study Mode:**
-    - Implemented in `app/components/Flashcard.vue`.
-    - Features spaced repetition logic (saving answers via `/api/study/save-answer`).
-    - Text-to-Speech integration.
-    - Keyboard shortcuts (Space to flip, Arrows to answer).
+### 🔐 Authentication
+- **Local Authentication**: Username/password signup & login
+- **Google OAuth**: One-click Google sign-in
+- **JWT Token Management**: Access token (30 min) + refresh token (14 days)
+- Email verification support
 
-2.  **Authentication:**
-    - Local email/password strategy.
-    - Implemented Google OAuth2 with Authorization Code Flow.
-    - Session management and Refresh token rotation via `useAuth` & `useAuthState` (Sidebase).
+### 👥 Social Features
+- **Public Profiles**: View other users' shared decks
+- **Deck Sharing**: Share decks with the community
+- **View & Learner Counts**: Popularity metrics
 
-3.  **Data Models:**
-    - **Decks:** Collections of cards.
-    - **Cards:** Individual study items (Term/Definition) with status (`new`, `learning`, `known`).
+---
 
-## Building and Running
+## 🛠️ Tech Stack
 
-**Prerequisites:** Node.js, pnpm.
+| Category | Technology |
+|----------|------------|
+| **Framework** | [Nuxt 4](https://nuxt.com/) (Vue 3) |
+| **State Management** | [Pinia](https://pinia.vuejs.org/) with persistence |
+| **UI Components** | [@nuxt/ui](https://ui.nuxt.com/) |
+| **Authentication** | [@sidebase/nuxt-auth](https://auth.sidebase.io/) |
+| **Validation** | [Valibot](https://valibot.dev/) |
+| **Real-time** | Socket.IO Client |
+| **Utilities** | VueUse, Lodash, date-fns |
+| **Icons** | Iconify (Heroicons, Lucide) |
+| **Linting** | Biome |
+| **Package Manager** | pnpm |
 
-| Action         | Command          | Description                              |
-| :------------- | :--------------- | :--------------------------------------- |
-| **Install**    | `pnpm install`   | Install dependencies.                    |
-| **Dev Server** | `pnpm dev`       | Start server at `http://localhost:3000`. |
-| **Build**      | `pnpm build`     | Production build.                        |
-| **Lint**       | `pnpm lint`      | Run ESLint.                              |
-| **Typecheck**  | `pnpm typecheck` | Run Vue/TS type checking.                |
+---
 
-## Development Conventions
+## 📁 Project Structure
 
-- **UI Components:** Prefer **Nuxt UI** components (`<UButton>`, `<UCard>`, `<UIcon>`) over raw HTML/Tailwind where possible.
-- **Typing:** Strict TypeScript usage. Always use types from `shared/types/` when dealing with business entities (Decks, Cards).
-- **Icons:** Lucide icons via Nuxt UI (e.g., `i-lucide-home`).
-- **Fetching:** Use `useFetch` or `$fetch` for API interactions.
-- **Styling:** Utility-first with Tailwind CSS. Avoid global CSS files unless necessary.
-- **State:** Local component state for transient UI (like flashcard flipping), `useState` or API for persistent data.
+```
+vocabify_fe/
+├── app/
+│   ├── assets/           # Static assets (CSS)
+│   ├── components/       # Reusable Vue components
+│   │   ├── AppHeader.vue
+│   │   ├── AppFooter.vue
+│   │   ├── AppLogo.vue
+│   │   ├── KeyboardShortcuts.vue
+│   │   └── Skeleton/     # Loading skeleton components
+│   ├── composables/      # Vue composables
+│   │   ├── useDeckSearch.ts
+│   │   └── useFlashcardSession.ts
+│   ├── layouts/          # Page layouts
+│   │   ├── auth.vue      # Authentication pages layout
+│   │   ├── callback.vue  # OAuth callback layout
+│   │   └── default.vue   # Main app layout
+│   ├── pages/            # File-based routing
+│   │   ├── (auth)/       # Login, Signup pages
+│   │   ├── (core)/       # Main app pages
+│   │   │   ├── create-deck/
+│   │   │   ├── library/
+│   │   │   │   └── [slug]/
+│   │   │   │       ├── index.vue     # Deck details
+│   │   │   │       ├── flashcards.vue
+│   │   │   │       ├── learn.vue
+│   │   │   │       └── test.vue
+│   │   │   └── shared/   # Public shared decks
+│   │   ├── [username]/   # Public profile pages
+│   │   ├── profile.vue   # User profile
+│   │   └── index.vue     # Landing page
+│   ├── plugins/          # Nuxt plugins
+│   ├── stores/           # Pinia stores
+│   │   └── deck.ts       # Deck state management
+│   └── utils/            # Utility functions
+│       ├── constants.ts
+│       ├── enums.ts
+│       ├── generateQuestions.ts
+│       └── quotes.ts
+├── server/
+│   └── api/              # Server API routes (proxy)
+├── shared/
+│   └── types/            # TypeScript types
+│       ├── auth.ts       # Login/signup schemas
+│       ├── card.ts       # Card, FlashcardSession, LearnSession
+│       ├── deck.ts       # Deck, DeckStats
+│       ├── user.ts       # User types
+│       ├── pagination.ts
+│       └── error.ts
+├── nuxt.config.ts        # Nuxt configuration
+├── biome.json            # Linting configuration
+└── package.json
+```
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js** ≥ 18.0.0
+- **pnpm** (recommended)
+
+### Installation
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd vocabify_fe
+
+# Install dependencies
+pnpm install
+```
+
+### Environment Variables
+
+Create a `.env` file in the root directory:
+
+```env
+NUXT_API_URL=http://localhost:3000/api
+NUXT_PUBLIC_APP_URL=http://localhost:3000
+NUXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NUXT_PUBLIC_GOOGLE_REDIRECT_URI=http://localhost:3000/login/callback
+```
+
+### Development
+
+```bash
+# Start development server
+pnpm dev
+```
+
+### Production
+
+```bash
+# Build for production
+pnpm build
+
+# Preview production build
+pnpm preview
+```
+
+---
+
+## 📜 Available Scripts
+
+| Script | Description |
+|--------|-------------|
+| `pnpm dev` | Start development server |
+| `pnpm build` | Build for production |
+| `pnpm preview` | Preview production build |
+| `pnpm typecheck` | Run TypeScript type checking |
+| `pnpm lint` | Run Biome linter |
+| `pnpm lint:fix` | Fix linting issues |
+| `pnpm format` | Check code formatting |
+| `pnpm format:fix` | Fix formatting issues |
+| `pnpm check` | Run all checks (lint + format) |
+| `pnpm check:fix` | Fix all issues |
+
+---
+
+## 🧠 Spaced Repetition System
+
+Vocabify uses a spaced repetition algorithm to optimize learning:
+
+| Field | Description |
+|-------|-------------|
+| `streak` | Consecutive correct answers (0-5+) |
+| `reviewDate` | Scheduled next review date |
+| `status` | `new` → `learning` → `known` |
+
+**Study Priority**: Cards due for review (`reviewDate ≤ today`) appear first, followed by new cards.
+
+---
+
+## 🎨 Theming
+
+The app supports **light** and **dark** modes with automatic theme detection. Colors are managed through the Nuxt UI theming system.
+
+---
+
+## 📄 License
+
+This project is private and proprietary.
