@@ -1,45 +1,45 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui';
+import type { FormSubmitEvent } from "@nuxt/ui";
 
 definePageMeta({
-  layout: 'auth',
-  auth: {
-    unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/',
-  },
+	layout: "auth",
+	auth: {
+		unauthenticatedOnly: true,
+		navigateAuthenticatedTo: "/",
+	},
 });
 
 useSeoMeta({
-  title: 'Sign up',
-  description: 'Create an account to get started',
+	title: "Sign up",
+	description: "Create an account to get started",
 });
 
 const toast = useToast();
 const { signUp } = useAuth();
 
 const providers = [
-  {
-    label: 'Google',
-    icon: 'i-simple-icons-google',
-    onClick: () => {
-      toast.add({ title: 'Google', description: 'Login with Google' });
-    },
-  },
-  {
-    label: 'GitHub',
-    icon: 'i-simple-icons-github',
-    onClick: () => {
-      toast.add({ title: 'GitHub', description: 'Login with GitHub' });
-    },
-  },
+	{
+		label: "Google",
+		icon: "i-simple-icons-google",
+		onClick: () => {
+			toast.add({ title: "Google", description: "Login with Google" });
+		},
+	},
+	{
+		label: "GitHub",
+		icon: "i-simple-icons-github",
+		onClick: () => {
+			toast.add({ title: "GitHub", description: "Login with GitHub" });
+		},
+	},
 ];
 
 function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
-  signUp(payload.data, { callbackUrl: '/library' }).catch(
-    (_: ErrorResponse) => {
-      toast.add({ title: 'Login failed' });
-    },
-  );
+	signUp(payload.data, { callbackUrl: "/library" }).catch(
+		(_: ErrorResponse) => {
+			toast.add({ title: "Login failed" });
+		},
+	);
 }
 </script>
 

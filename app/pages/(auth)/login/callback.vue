@@ -1,10 +1,10 @@
 <script lang="ts" setup>
 definePageMeta({
-  layout: 'callback',
-  auth: {
-    unauthenticatedOnly: true,
-    navigateAuthenticatedTo: '/',
-  },
+	layout: "callback",
+	auth: {
+		unauthenticatedOnly: true,
+		navigateAuthenticatedTo: "/",
+	},
 });
 
 const route = useRoute();
@@ -18,42 +18,42 @@ const loading = ref(false);
 const code = computed(() => route.query.code as string);
 
 onMounted(async () => {
-  loading.value = true;
+	loading.value = true;
 
-  if (!code.value) return router.push('/login');
+	if (!code.value) return router.push("/login");
 
-  $fetch<TokenPair>('/api/auth/google/exchange', {
-    method: 'POST',
-    body: { code: code.value },
-  })
-    .then(async (res) => {
-      setToken(res.accessToken);
-      rawRefreshToken.value = res.refreshToken;
+	$fetch<TokenPair>("/api/auth/google/exchange", {
+		method: "POST",
+		body: { code: code.value },
+	})
+		.then(async (res) => {
+			setToken(res.accessToken);
+			rawRefreshToken.value = res.refreshToken;
 
-      await getSession();
+			await getSession();
 
-      toast.add({
-        title: 'Login success',
-        description: 'You have successfully logged in.',
-        color: 'success',
-      });
+			toast.add({
+				title: "Login success",
+				description: "You have successfully logged in.",
+				color: "success",
+			});
 
-      await navigateTo('/library');
-    })
-    .catch(async (error: ErrorResponse) => {
-      console.error('Exchange token error:', error);
+			await navigateTo("/library");
+		})
+		.catch(async (error: ErrorResponse) => {
+			console.error("Exchange token error:", error);
 
-      toast.add({
-        title: 'Login Failed',
-        description: 'Failed to verify Google login.',
-        color: 'error',
-      });
+			toast.add({
+				title: "Login Failed",
+				description: "Failed to verify Google login.",
+				color: "error",
+			});
 
-      await navigateTo('/login');
-    })
-    .finally(() => {
-      loading.value = false;
-    });
+			await navigateTo("/login");
+		})
+		.finally(() => {
+			loading.value = false;
+		});
 });
 </script>
 

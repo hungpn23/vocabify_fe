@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-defineProps<{ card: Pick<Card, 'status'> }>();
+defineProps<{ card: Pick<Card, "status"> }>();
 </script>
 
 <template>

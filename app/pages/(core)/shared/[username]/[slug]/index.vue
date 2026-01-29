@@ -1,17 +1,17 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui';
-import { breakpointsTailwind } from '@vueuse/core';
-import * as v from 'valibot';
+import type { FormSubmitEvent } from "@nuxt/ui";
+import { breakpointsTailwind } from "@vueuse/core";
+import * as v from "valibot";
 
 definePageMeta({
-  auth: false,
+	auth: false,
 });
 
 const schema = v.object({
-  passcode: v.pipe(
-    v.string(),
-    v.minLength(4, 'Passcode must be at least 4 characters'),
-  ),
+	passcode: v.pipe(
+		v.string(),
+		v.minLength(4, "Passcode must be at least 4 characters"),
+	),
 });
 
 type Schema = v.InferOutput<typeof schema>;
@@ -22,7 +22,7 @@ const toast = useToast();
 const { token } = useAuth();
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
+const smAndLarger = breakpoints.greaterOrEqual("sm");
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
 
@@ -30,65 +30,65 @@ const isFlipped = ref(false);
 const isModalOpen = ref(false);
 
 const state = reactive<Schema>({
-  passcode: '',
+	passcode: "",
 });
 
 const { data: deck, error } = await useFetch<GetSharedOneRes, ErrorResponse>(
-  `/api/decks/shared/${route.query.deckId}`,
-  { headers: { Authorization: token.value || '' } },
+	`/api/decks/shared/${route.query.deckId}`,
+	{ headers: { Authorization: token.value || "" } },
 );
 
 watchImmediate(error, (newErr) => {
-  if (newErr) toast.add({ title: 'Error fetching deck', color: 'error' });
+	if (newErr) toast.add({ title: "Error fetching deck", color: "error" });
 });
 
 async function onAddToLibrary() {
-  if (!token.value) {
-    toast.add({ title: 'Please login first before adding deck to library' });
-    router.push('/login');
-    return;
-  }
+	if (!token.value) {
+		toast.add({ title: "Please login first before adding deck to library" });
+		router.push("/login");
+		return;
+	}
 
-  if (deck.value?.visibility === Visibility.PROTECTED) {
-    state.passcode = '';
-    isModalOpen.value = true;
-    return;
-  }
+	if (deck.value?.visibility === Visibility.PROTECTED) {
+		state.passcode = "";
+		isModalOpen.value = true;
+		return;
+	}
 
-  await cloneDeck();
+	await cloneDeck();
 }
 
 async function handleSubmit(event: FormSubmitEvent<Schema>) {
-  state.passcode = event.data.passcode;
+	state.passcode = event.data.passcode;
 
-  isModalOpen.value = false;
-  await cloneDeck();
+	isModalOpen.value = false;
+	await cloneDeck();
 }
 
 async function cloneDeck() {
-  await $fetch(`/api/decks/clone/${deck.value?.id}`, {
-    method: 'POST',
-    headers: { Authorization: token.value || '' },
-    body: state,
-  })
-    .then(() => {
-      toast.add({ title: 'Deck added to library', color: 'success' });
-      router.push('/library');
-    })
-    .catch((err: ErrorResponse) => {
-      toast.add({
-        title: err.data?.message || 'Failed to add deck',
-        color: 'error',
-      });
-    });
+	await $fetch(`/api/decks/clone/${deck.value?.id}`, {
+		method: "POST",
+		headers: { Authorization: token.value || "" },
+		body: state,
+	})
+		.then(() => {
+			toast.add({ title: "Deck added to library", color: "success" });
+			router.push("/library");
+		})
+		.catch((err: ErrorResponse) => {
+			toast.add({
+				title: err.data?.message || "Failed to add deck",
+				color: "error",
+			});
+		});
 }
 
 function toggleFlip() {
-  isFlipped.value = !isFlipped.value;
+	isFlipped.value = !isFlipped.value;
 }
 
 defineShortcuts({
-  ' ': throttledToggleFlip,
+	" ": throttledToggleFlip,
 });
 </script>
 

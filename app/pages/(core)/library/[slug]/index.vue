@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type {
-  DropdownMenuItem,
-  FormErrorEvent,
-  FormSubmitEvent,
-} from '@nuxt/ui';
-import { formatDistanceToNowStrict } from 'date-fns';
+	DropdownMenuItem,
+	FormErrorEvent,
+	FormSubmitEvent,
+} from "@nuxt/ui";
+import { formatDistanceToNowStrict } from "date-fns";
 
 const toast = useToast();
 const router = useRouter();
@@ -12,240 +12,242 @@ const { token, data: user } = useAuth();
 const store = useDeckStore();
 
 const { isSavingCards, session, progress, handleAnswer, shuffleCards } =
-  useFlashcardSession();
+	useFlashcardSession();
 
 const throttledToggleFlip = useThrottleFn(toggleFlip, 300);
 const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 
-const form = useTemplateRef('form');
+const form = useTemplateRef("form");
 
 const isFlipped = ref(false);
-const formErrorMsg = ref('');
+const formErrorMsg = ref("");
 const isEditing = ref(false);
 const isSavingChanges = ref(false);
 
 const state = reactive<Partial<UpdateDeckSchema>>({});
 
 const settingOptions = computed<DropdownMenuItem[][]>(() => [
-  [
-    {
-      label: 'Restart progress',
-      icon: 'i-lucide-refresh-cw',
-      color: 'warning',
-      onSelect: store.restartDeck,
-    },
-    {
-      label: 'Ignore review dates',
-      icon: `i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`,
-      type: 'checkbox',
-      checked: store.isIgnoreDate,
-      onUpdateChecked: (checked) => store.updateIgnoreDate(checked),
-      onSelect: (e) => e.preventDefault(),
-    },
-    {
-      label: 'Edit deck',
-      icon: 'i-lucide-pencil-line',
-      disabled: isEditing.value,
-      onSelect: startEditing,
-    },
-  ],
-  [
-    {
-      label: 'Delete deck',
-      icon: 'i-lucide-trash-2',
-      color: 'error',
-      onSelect: onDelete,
-    },
-  ],
+	[
+		{
+			label: "Restart progress",
+			icon: "i-lucide-refresh-cw",
+			color: "warning",
+			onSelect: store.restartDeck,
+		},
+		{
+			label: "Ignore review dates",
+			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
+			type: "checkbox",
+			checked: store.isIgnoreDate,
+			onUpdateChecked: (checked) => store.updateIgnoreDate(checked),
+			onSelect: (e) => e.preventDefault(),
+		},
+		{
+			label: "Edit deck",
+			icon: "i-lucide-pencil-line",
+			disabled: isEditing.value,
+			onSelect: startEditing,
+		},
+	],
+	[
+		{
+			label: "Delete deck",
+			icon: "i-lucide-trash-2",
+			color: "error",
+			onSelect: onDelete,
+		},
+	],
 ]);
 
 const studyOptions = computed(() => [
-  {
-    label: 'Flashcards',
-    icon: 'i-lucide-gallery-horizontal-end',
-    to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Learn',
-    icon: 'i-lucide-notebook-pen',
-    to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Test',
-    icon: 'i-lucide-flask-conical',
-    to: `/library/${store.slug}/test?deckId=${store.deckId}`,
-  },
-  {
-    label: 'Coming soon',
-    icon: '',
-    to: `#`,
-  },
+	{
+		label: "Flashcards",
+		icon: "i-lucide-gallery-horizontal-end",
+		to: `/library/${store.slug}/flashcards?deckId=${store.deckId}`,
+	},
+	{
+		label: "Learn",
+		icon: "i-lucide-notebook-pen",
+		to: `/library/${store.slug}/learn?deckId=${store.deckId}`,
+	},
+	{
+		label: "Test",
+		icon: "i-lucide-flask-conical",
+		to: `/library/${store.slug}/test?deckId=${store.deckId}`,
+	},
+	{
+		label: "Coming soon",
+		icon: "",
+		to: `#`,
+	},
 ]);
 
 watchImmediate(
-  () => store.deck,
-  (newDeck) => resetFormState(newDeck),
+	() => store.deck,
+	(newDeck) => resetFormState(newDeck),
 );
 
 // Update form state when auto-save happens in useDeck
 watch(
-  () => session.savedCards,
-  (newCards) => {
-    if (!newCards.length) return;
+	() => session.savedCards,
+	(newCards) => {
+		if (!newCards.length) return;
 
-    const map = new Map(newCards.map((a) => [a.id, a]));
+		const map = new Map(newCards.map((a) => [a.id, a]));
 
-    if (state.cards?.length) {
-      for (const c of state.cards) {
-        const answer = map.get(c.id);
+		if (state.cards?.length) {
+			for (const c of state.cards) {
+				const answer = map.get(c.id);
 
-        if (answer) {
-          Object.assign(c, {
-            ...answer,
-            status: getCardStatus(answer.reviewDate),
-          });
-        }
-      }
-    }
-  },
+				if (answer) {
+					Object.assign(c, {
+						...answer,
+						status: getCardStatus(answer.reviewDate),
+					});
+				}
+			}
+		}
+	},
 );
 
 watch(
-  () => session.currentCard,
-  () => (isFlipped.value = false),
+	() => session.currentCard,
+	() => {
+		isFlipped.value = false;
+	},
 );
 
 async function onDelete() {
-  $fetch(`/api/decks/${store.deckId}`, {
-    method: 'DELETE',
-    headers: { Authorization: token.value || '' },
-  })
-    .then(() => router.push(`/library`))
-    .catch((error: ErrorResponse) => {
-      toast.add({
-        title: 'Error deleting deck',
-        description: JSON.stringify(error.data?.message || 'Unknown error'),
-        color: 'error',
-      });
-    });
+	$fetch(`/api/decks/${store.deckId}`, {
+		method: "DELETE",
+		headers: { Authorization: token.value || "" },
+	})
+		.then(() => router.push(`/library`))
+		.catch((error: ErrorResponse) => {
+			toast.add({
+				title: "Error deleting deck",
+				description: JSON.stringify(error.data?.message || "Unknown error"),
+				color: "error",
+			});
+		});
 }
 
 async function onSubmit(
-  event: FormSubmitEvent<{
-    name: string;
-    description: string;
-    cards: UpdateCardSchema[];
-  }>,
+	event: FormSubmitEvent<{
+		name: string;
+		description: string;
+		cards: UpdateCardSchema[];
+	}>,
 ) {
-  if (isSavingChanges.value) return;
-  isSavingChanges.value = true;
+	if (isSavingChanges.value) return;
+	isSavingChanges.value = true;
 
-  $fetch(`/api/decks/${store.deckId}`, {
-    method: 'PATCH',
-    headers: { Authorization: token.value || '' },
-    body: event.data,
-  })
-    .then(async () => {
-      isEditing.value = false;
-      await store.refetch();
+	$fetch(`/api/decks/${store.deckId}`, {
+		method: "PATCH",
+		headers: { Authorization: token.value || "" },
+		body: event.data,
+	})
+		.then(async () => {
+			isEditing.value = false;
+			await store.refetch();
 
-      toast.add({
-        title: 'Changes saved successfully.',
-        color: 'success',
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      toast.add({
-        title: 'Error saving changes',
-        description: JSON.stringify(error.data?.message || 'Unknown error'),
-        color: 'error',
-      });
+			toast.add({
+				title: "Changes saved successfully.",
+				color: "success",
+			});
+		})
+		.catch((error: ErrorResponse) => {
+			toast.add({
+				title: "Error saving changes",
+				description: JSON.stringify(error.data?.message || "Unknown error"),
+				color: "error",
+			});
 
-      return;
-    })
-    .finally(() => {
-      formErrorMsg.value = '';
-      isSavingChanges.value = false;
-    });
+			return;
+		})
+		.finally(() => {
+			formErrorMsg.value = "";
+			isSavingChanges.value = false;
+		});
 }
 
 async function onSubmitError(event: FormErrorEvent) {
-  const formError = event.errors.find((e) => e.name === '');
+	const formError = event.errors.find((e) => e.name === "");
 
-  formErrorMsg.value = formError
-    ? formError.message
-    : 'Please fill in all required fields.';
+	formErrorMsg.value = formError
+		? formError.message
+		: "Please fill in all required fields.";
 }
 
 function startEditing() {
-  isEditing.value = true;
+	isEditing.value = true;
 }
 
 function cancelEditing() {
-  resetFormState(store.deck);
-  isEditing.value = false;
-  form.value?.clear();
-  formErrorMsg.value = '';
+	resetFormState(store.deck);
+	isEditing.value = false;
+	form.value?.clear();
+	formErrorMsg.value = "";
 
-  toast.add({
-    title: 'Editing canceled successfully.',
-    color: 'success',
-  });
+	toast.add({
+		title: "Editing canceled successfully.",
+		color: "success",
+	});
 }
 
 function resetFormState(deck?: GetOneRes) {
-  if (deck) {
-    state.name = deck.name;
-    state.description = deck.description || '';
-    state.cards = structuredClone(deck.cards);
-  }
+	if (deck) {
+		state.name = deck.name;
+		state.description = deck.description || "";
+		state.cards = structuredClone(deck.cards);
+	}
 }
 
 function addCardFirst() {
-  state.cards?.unshift({
-    id: crypto.randomUUID() as UUID,
-    term: '',
-    definition: '',
-    streak: 0,
-    reviewDate: undefined,
-    status: 'new',
-  });
+	state.cards?.unshift({
+		id: crypto.randomUUID() as UUID,
+		term: "",
+		definition: "",
+		streak: 0,
+		reviewDate: undefined,
+		status: "new",
+	});
 
-  toast.add({
-    title: 'Added first successfully.',
-    color: 'success',
-  });
+	toast.add({
+		title: "Added first successfully.",
+		color: "success",
+	});
 }
 
 function addCardLast() {
-  state.cards?.push({
-    id: crypto.randomUUID() as UUID,
-    term: '',
-    definition: '',
-    streak: 0,
-    reviewDate: undefined,
-    status: 'new',
-  });
+	state.cards?.push({
+		id: crypto.randomUUID() as UUID,
+		term: "",
+		definition: "",
+		streak: 0,
+		reviewDate: undefined,
+		status: "new",
+	});
 
-  toast.add({
-    title: 'Added last successfully.',
-    color: 'success',
-  });
+	toast.add({
+		title: "Added last successfully.",
+		color: "success",
+	});
 }
 
 function removeCard(cardId?: UUID) {
-  state.cards = state.cards?.filter((c) => c.id !== cardId);
+	state.cards = state.cards?.filter((c) => c.id !== cardId);
 }
 
 function toggleFlip() {
-  if (!session.currentCard) return;
-  isFlipped.value = !isFlipped.value;
+	if (!session.currentCard) return;
+	isFlipped.value = !isFlipped.value;
 }
 
 defineShortcuts({
-  ' ': throttledToggleFlip,
-  arrowright: () => throttledHandleAnswer(true),
-  arrowleft: () => throttledHandleAnswer(false),
+	" ": throttledToggleFlip,
+	arrowright: () => throttledHandleAnswer(true),
+	arrowleft: () => throttledHandleAnswer(false),
 });
 </script>
 

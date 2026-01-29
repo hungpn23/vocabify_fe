@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { TabsItem } from '@nuxt/ui';
+import type { TabsItem } from "@nuxt/ui";
 
 const { status, data: user } = useAuth();
 

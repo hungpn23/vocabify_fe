@@ -1,215 +1,215 @@
 <script setup lang="ts">
-import type { UCard } from '#components';
-import { breakpointsTailwind } from '@vueuse/core';
+import { breakpointsTailwind } from "@vueuse/core";
+import type { UCard } from "#components";
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
+const smAndLarger = breakpoints.greaterOrEqual("sm");
 const store = useDeckStore();
-const cardRefs = useTemplateRef('cards');
+const cardRefs = useTemplateRef("cards");
 
 const throttledOnChoiceSelected = useThrottleFn(onChoiceSelected, 300);
 
 const isSettingOpen = ref(false);
 
 const setting = reactive<TestSetting>({
-  questionAmount: 0,
-  isIgnoreDate: true,
-  types: ['multiple_choices', 'written'],
-  direction: 'term_to_def',
+	questionAmount: 0,
+	isIgnoreDate: true,
+	types: ["multiple_choices", "written"],
+	direction: "term_to_def",
 });
-let snapshotSetting = '';
+let snapshotSetting = "";
 
 const session = reactive<TestSession>({
-  index: 0,
-  isSubmitted: false,
-  questions: [],
-  currentQuestion: undefined,
-  input: null,
-  element: null,
+	index: 0,
+	isSubmitted: false,
+	questions: [],
+	currentQuestion: undefined,
+	input: null,
+	element: null,
 });
 
 watch([() => session.questions, () => session.index], () => {
-  session.currentQuestion = session.questions[session.index];
+	session.currentQuestion = session.questions[session.index];
 });
 
 watch([cardRefs, () => session.index], () => {
-  if (cardRefs.value?.length) {
-    session.element = cardRefs.value[session.index]?.$el as Element;
-  }
+	if (cardRefs.value?.length) {
+		session.element = cardRefs.value[session.index]?.$el as Element;
+	}
 });
 
 watch(
-  [
-    () => store.deck?.cards,
-    () => setting.isIgnoreDate,
-    () => setting.questionAmount,
-  ],
-  ([newCards, newIsIgnoreDate]) => {
-    if (newCards && newCards.length > 0) {
-      session.input = null;
-      session.index = 0;
-      session.isSubmitted = false;
+	[
+		() => store.deck?.cards,
+		() => setting.isIgnoreDate,
+		() => setting.questionAmount,
+	],
+	([newCards, newIsIgnoreDate]) => {
+		if (newCards && newCards.length > 0) {
+			session.input = null;
+			session.index = 0;
+			session.isSubmitted = false;
 
-      const filteredCards = getCards(newCards, newIsIgnoreDate);
+			const filteredCards = getCards(newCards, newIsIgnoreDate);
 
-      if (
-        setting.questionAmount === 0 ||
-        setting.questionAmount > filteredCards.length
-      ) {
-        setting.questionAmount = filteredCards.length;
-      }
+			if (
+				setting.questionAmount === 0 ||
+				setting.questionAmount > filteredCards.length
+			) {
+				setting.questionAmount = filteredCards.length;
+			}
 
-      session.questions = generateQuestions<TestQuestion>({
-        cards: shuffleArray(newCards).slice(0, setting.questionAmount),
-        types: setting.types,
-        dir: setting.direction,
-        answerPool: newCards,
-      });
-    }
-  },
+			session.questions = generateQuestions<TestQuestion>({
+				cards: shuffleArray(newCards).slice(0, setting.questionAmount),
+				types: setting.types,
+				dir: setting.direction,
+				answerPool: newCards,
+			});
+		}
+	},
 );
 
 watch(() => session.index, scrollAndFocus);
 
 watch(
-  () => setting.types,
-  () => {
-    if (!setting.types.length) setting.types = ['multiple_choices'];
-  },
+	() => setting.types,
+	() => {
+		if (!setting.types.length) setting.types = ["multiple_choices"];
+	},
 );
 
 function scrollAndFocus() {
-  if (session.element) {
-    session.element.scrollIntoView({
-      behavior: 'smooth',
-      block: 'center',
-    });
+	if (session.element) {
+		session.element.scrollIntoView({
+			behavior: "smooth",
+			block: "center",
+		});
 
-    if (session.input) session.input.blur();
+		if (session.input) session.input.blur();
 
-    const newInput = session.element.querySelector('input');
-    if (newInput) {
-      session.input = newInput;
-      setTimeout(() => newInput.focus(), 300);
-      return;
-    }
+		const newInput = session.element.querySelector("input");
+		if (newInput) {
+			session.input = newInput;
+			setTimeout(() => newInput.focus(), 300);
+			return;
+		}
 
-    session.input = null;
-  }
+		session.input = null;
+	}
 }
 
-function handleChangeQuestion(dir: 'left' | 'right') {
-  if (!cardRefs.value || !cardRefs.value.length) return;
+function handleChangeQuestion(dir: "left" | "right") {
+	if (!cardRefs.value || !cardRefs.value.length) return;
 
-  if (dir === 'left' && session.index > 0) {
-    session.index--;
-  } else if (dir === 'right' && session.index < cardRefs.value.length - 1) {
-    session.index++;
-  }
+	if (dir === "left" && session.index > 0) {
+		session.index--;
+	} else if (dir === "right" && session.index < cardRefs.value.length - 1) {
+		session.index++;
+	}
 }
 
 async function onSettingClosed() {
-  if (JSON.stringify(setting) === snapshotSetting) {
-    scrollAndFocus();
-    return;
-  }
+	if (JSON.stringify(setting) === snapshotSetting) {
+		scrollAndFocus();
+		return;
+	}
 
-  snapshotSetting = '';
-  await store.refetch();
-  scrollAndFocus();
+	snapshotSetting = "";
+	await store.refetch();
+	scrollAndFocus();
 }
 
 function onChoiceSelected(cIndex: number, qIndex: number, q?: TestQuestion) {
-  if (!q) return;
+	if (!q) return;
 
-  q.userChoiceIndex = cIndex;
-  q.isUserAnswerCorrect = cIndex === q.correctChoiceIndex;
-  session.index = qIndex;
-  handleChangeQuestion('right');
+	q.userChoiceIndex = cIndex;
+	q.isUserAnswerCorrect = cIndex === q.correctChoiceIndex;
+	session.index = qIndex;
+	handleChangeQuestion("right");
 }
 
 function onWrittenAnswerBlur(q: TestQuestion) {
-  if (!q.userAnswer) return;
+	if (!q.userAnswer) return;
 
-  q.userAnswer = q.userAnswer.trim();
-  q.isUserAnswerCorrect =
-    q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
+	q.userAnswer = q.userAnswer.trim();
+	q.isUserAnswerCorrect =
+		q.userAnswer.toLowerCase() === q.correctAnswer.toLowerCase();
 }
 
 function onDontKnowClicked(q: TestQuestion, qIndex: number) {
-  if (q.isMarkedAsDontKnow) return;
+	if (q.isMarkedAsDontKnow) return;
 
-  q.isMarkedAsDontKnow = true;
-  q.isUserAnswerCorrect = true;
-  session.index = qIndex;
-  handleChangeQuestion('right');
+	q.isMarkedAsDontKnow = true;
+	q.isUserAnswerCorrect = true;
+	session.index = qIndex;
+	handleChangeQuestion("right");
 }
 
 function onTestSubmitted() {
-  session.isSubmitted = true;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+	session.isSubmitted = true;
+	window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
 function getChoiceBtnClass(q: TestQuestion, cIndex: number) {
-  const isSelected = q.userChoiceIndex === cIndex;
-  const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+	const isSelected = q.userChoiceIndex === cIndex;
+	const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
 
-  if (!session.isSubmitted) {
-    if (isSelected) {
-      return 'border-primary bg-primary/10 text-primary';
-    }
+	if (!session.isSubmitted) {
+		if (isSelected) {
+			return "border-primary bg-primary/10 text-primary";
+		}
 
-    return '';
-  }
+		return "";
+	}
 
-  if (isSelected) {
-    if (isThisChoiceCorrect) {
-      return 'border-success bg-success/10 text-success';
-    }
+	if (isSelected) {
+		if (isThisChoiceCorrect) {
+			return "border-success bg-success/10 text-success";
+		}
 
-    return 'border-error bg-error/10 text-error';
-  } else {
-    if (isThisChoiceCorrect) {
-      return 'border-dashed border-success bg-success/10 text-success';
-    }
+		return "border-error bg-error/10 text-error";
+	} else {
+		if (isThisChoiceCorrect) {
+			return "border-dashed border-success bg-success/10 text-success";
+		}
 
-    return 'opacity-70';
-  }
+		return "opacity-70";
+	}
 }
 
 function getWrittenInputClass(q: TestQuestion) {
-  if (!session.isSubmitted) return '';
+	if (!session.isSubmitted) return "";
 
-  if (q.isUserAnswerCorrect) {
-    return 'border-success';
-  }
+	if (q.isUserAnswerCorrect) {
+		return "border-success";
+	}
 
-  return 'border-error';
+	return "border-error";
 }
 
 defineShortcuts({
-  '1': () =>
-    throttledOnChoiceSelected(0, session.index, session.currentQuestion),
-  '2': () =>
-    throttledOnChoiceSelected(1, session.index, session.currentQuestion),
-  '3': () =>
-    throttledOnChoiceSelected(2, session.index, session.currentQuestion),
-  '4': () =>
-    throttledOnChoiceSelected(3, session.index, session.currentQuestion),
+	"1": () =>
+		throttledOnChoiceSelected(0, session.index, session.currentQuestion),
+	"2": () =>
+		throttledOnChoiceSelected(1, session.index, session.currentQuestion),
+	"3": () =>
+		throttledOnChoiceSelected(2, session.index, session.currentQuestion),
+	"4": () =>
+		throttledOnChoiceSelected(3, session.index, session.currentQuestion),
 
-  arrowleft: {
-    handler: () => handleChangeQuestion('left'),
-    usingInput: true,
-  },
+	arrowleft: {
+		handler: () => handleChangeQuestion("left"),
+		usingInput: true,
+	},
 
-  arrowright: {
-    handler: () => handleChangeQuestion('right'),
-    usingInput: true,
-  },
+	arrowright: {
+		handler: () => handleChangeQuestion("right"),
+		usingInput: true,
+	},
 });
 
 onMounted(() => {
-  isSettingOpen.value = true;
+	isSettingOpen.value = true;
 });
 </script>
 

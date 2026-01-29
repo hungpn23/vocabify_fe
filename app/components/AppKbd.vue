@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { IconProps } from '@nuxt/ui';
+import type { IconProps } from "@nuxt/ui";
 
 // Định nghĩa props
 defineProps<{
-  label?: string | number;
-  icon?: IconProps & { size?: number };
+	label?: string | number;
+	icon?: IconProps & { size?: number };
 }>();
 </script>
 

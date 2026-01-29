@@ -1,18 +1,18 @@
 <script lang="ts" setup>
-import type { FormSubmitEvent } from '@nuxt/ui';
-import { formatTimeAgo } from '@vueuse/core';
-import * as v from 'valibot';
-import { Visibility } from '~/utils/enums';
+import type { FormSubmitEvent } from "@nuxt/ui";
+import { formatTimeAgo } from "@vueuse/core";
+import * as v from "valibot";
+import { Visibility } from "~/utils/enums";
 
 definePageMeta({
-  auth: false,
+	auth: false,
 });
 
 const schema = v.object({
-  passcode: v.pipe(
-    v.string(),
-    v.minLength(4, 'Passcode must be at least 4 characters'),
-  ),
+	passcode: v.pipe(
+		v.string(),
+		v.minLength(4, "Passcode must be at least 4 characters"),
+	),
 });
 
 type Schema = v.InferOutput<typeof schema>;
@@ -21,93 +21,93 @@ const router = useRouter();
 const toast = useToast();
 const { token, data: user } = useAuth();
 const {
-  page,
-  limit,
-  filter,
-  search,
-  filterItems,
-  query: searchQuery,
+	page,
+	limit,
+	filter,
+	search,
+	filterItems,
+	query: searchQuery,
 } = useDeckSearch();
 
-const input = useTemplateRef('input');
+const input = useTemplateRef("input");
 
 const isModalOpen = ref(false);
 const deckId = ref<UUID | null>(null);
 
 const state = reactive<Schema>({
-  passcode: '',
+	passcode: "",
 });
 
 const totalRecords = computed(
-  () => paginated.value?.metadata.totalRecords || 0,
+	() => paginated.value?.metadata.totalRecords || 0,
 );
 
 const query = computed(() => ({
-  ...searchQuery.value,
-  visitorId: user.value?.id,
+	...searchQuery.value,
+	visitorId: user.value?.id,
 }));
 
 const { data: paginated, error } = await useFetch<
-  Paginated<GetSharedManyRes>,
-  ErrorResponse
->('/api/decks/shared', {
-  query,
-  headers: { Authorization: token.value || '' },
+	Paginated<GetSharedManyRes>,
+	ErrorResponse
+>("/api/decks/shared", {
+	query,
+	headers: { Authorization: token.value || "" },
 });
 
 watch(error, (newErr) => {
-  if (newErr) toast.add({ title: 'Error fetching decks' });
+	if (newErr) toast.add({ title: "Error fetching decks" });
 });
 
 async function onAddToLibrary(deck: GetSharedManyRes) {
-  if (!token.value) {
-    toast.add({ title: 'Please login first before adding deck to library' });
-    router.push('/login');
-    return;
-  }
+	if (!token.value) {
+		toast.add({ title: "Please login first before adding deck to library" });
+		router.push("/login");
+		return;
+	}
 
-  deckId.value = deck.id;
+	deckId.value = deck.id;
 
-  if (deck.visibility === Visibility.PROTECTED) {
-    state.passcode = '';
-    isModalOpen.value = true;
-    return;
-  }
+	if (deck.visibility === Visibility.PROTECTED) {
+		state.passcode = "";
+		isModalOpen.value = true;
+		return;
+	}
 
-  await cloneDeck();
+	await cloneDeck();
 }
 
 async function handleSubmit(event: FormSubmitEvent<Schema>) {
-  state.passcode = event.data.passcode;
+	state.passcode = event.data.passcode;
 
-  if (deckId.value) {
-    isModalOpen.value = false;
-    await cloneDeck();
-  }
+	if (deckId.value) {
+		isModalOpen.value = false;
+		await cloneDeck();
+	}
 }
 
 async function cloneDeck() {
-  await $fetch(`/api/decks/clone/${deckId.value}`, {
-    method: 'POST',
-    headers: { Authorization: token.value || '' },
-    body: state,
-  })
-    .then(() => {
-      toast.add({ title: 'Deck added to library', color: 'success' });
-      router.push('/library');
-    })
-    .catch((err: ErrorResponse) => {
-      toast.add({
-        title: err.data?.message || 'Failed to add deck',
-        color: 'error',
-      });
-    });
+	await $fetch(`/api/decks/clone/${deckId.value}`, {
+		method: "POST",
+		headers: { Authorization: token.value || "" },
+		body: state,
+	})
+		.then(() => {
+			toast.add({ title: "Deck added to library", color: "success" });
+			router.push("/library");
+		})
+		.catch((err: ErrorResponse) => {
+			toast.add({
+				title: err.data?.message || "Failed to add deck",
+				color: "error",
+			});
+		});
 }
 
 defineShortcuts({
-  '/': () => {
-    input.value?.inputRef?.focus();
-  },
+	"/": () => {
+		input.value?.inputRef?.focus();
+	},
 });
 </script>
 

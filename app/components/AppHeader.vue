@@ -1,69 +1,69 @@
 <script setup lang="ts">
-import { UAvatar } from '#components';
-import { breakpointsTailwind } from '@vueuse/core';
-import type { DropdownMenuItem, NavigationMenuItem } from '@nuxt/ui';
+import type { DropdownMenuItem, NavigationMenuItem } from "@nuxt/ui";
+import { breakpointsTailwind } from "@vueuse/core";
+import { UAvatar } from "#components";
 
 const { status, data: user } = useAuthState();
 const { signOut } = useAuth();
 const colorMode = useColorMode();
 const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
+const smAndLarger = breakpoints.greaterOrEqual("sm");
 
-const isDarkMode = computed(() => colorMode.value === 'dark');
+const isDarkMode = computed(() => colorMode.value === "dark");
 
 const items = computed<NavigationMenuItem[]>(() => [
-  {
-    label: 'Library',
-    to: '/library',
-  },
-  {
-    label: 'Shared',
-    to: '/shared',
-  },
-  {
-    label: 'About me',
-    to: '#',
-  },
+	{
+		label: "Library",
+		to: "/library",
+	},
+	{
+		label: "Shared",
+		to: "/shared",
+	},
+	{
+		label: "About me",
+		to: "#",
+	},
 ]);
 
 const avatarItems = computed<DropdownMenuItem[][]>(() => [
-  [
-    {
-      label: 'Profile',
-      icon: 'i-lucide-user',
-      to: '/profile',
-    },
-    {
-      label: isDarkMode.value ? 'Light Mode' : 'Dark Mode',
-      icon: isDarkMode.value ? 'i-lucide-sun' : 'i-lucide-moon',
-      class: 'cursor-pointer sm:hidden',
-      onSelect: toggleColorMode,
-    },
-    {
-      label: 'Settings',
-      icon: 'i-lucide-cog',
-      to: '/settings',
-    },
-  ],
-  [
-    {
-      label: 'Logout',
-      icon: 'i-lucide-log-out',
-      onSelect: onSignOut,
-    },
-  ],
+	[
+		{
+			label: "Profile",
+			icon: "i-lucide-user",
+			to: "/profile",
+		},
+		{
+			label: isDarkMode.value ? "Light Mode" : "Dark Mode",
+			icon: isDarkMode.value ? "i-lucide-sun" : "i-lucide-moon",
+			class: "cursor-pointer sm:hidden",
+			onSelect: toggleColorMode,
+		},
+		{
+			label: "Settings",
+			icon: "i-lucide-cog",
+			to: "/settings",
+		},
+	],
+	[
+		{
+			label: "Logout",
+			icon: "i-lucide-log-out",
+			onSelect: onSignOut,
+		},
+	],
 ]);
 
 function toggleColorMode() {
-  colorMode.preference = isDarkMode.value ? 'light' : 'dark';
+	colorMode.preference = isDarkMode.value ? "light" : "dark";
 }
 
 async function onSignOut() {
-  await signOut({ callbackUrl: '/login' });
+	await signOut({ callbackUrl: "/login" });
 }
 
 defineShortcuts({
-  '`': toggleColorMode,
+	"`": toggleColorMode,
 });
 </script>
 

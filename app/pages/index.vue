@@ -1,27 +1,27 @@
 <script setup lang="ts">
 definePageMeta({
-  auth: false,
+	auth: false,
 });
 
 const features = [
-  {
-    title: 'Study smarter',
-    description:
-      'Stop guessing and start learning with our scientifically proven study modes.',
-    icon: 'i-lucide-brain-circuit',
-  },
-  {
-    title: 'Share & Collaborate',
-    description:
-      'Find decks created by other students or share your own with the community.',
-    icon: 'i-lucide-users',
-  },
-  {
-    title: 'Track Progress',
-    description:
-      'Keep track of your learning journey with detailed statistics and insights.',
-    icon: 'i-lucide-bar-chart-3',
-  },
+	{
+		title: "Study smarter",
+		description:
+			"Stop guessing and start learning with our scientifically proven study modes.",
+		icon: "i-lucide-brain-circuit",
+	},
+	{
+		title: "Share & Collaborate",
+		description:
+			"Find decks created by other students or share your own with the community.",
+		icon: "i-lucide-users",
+	},
+	{
+		title: "Track Progress",
+		description:
+			"Keep track of your learning journey with detailed statistics and insights.",
+		icon: "i-lucide-bar-chart-3",
+	},
 ];
 </script>
 

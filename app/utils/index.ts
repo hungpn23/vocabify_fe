@@ -1,125 +1,125 @@
-import { addDays, isAfter } from 'date-fns';
+import { addDays, isAfter } from "date-fns";
 
 export const getVisibilityIcon = (visibility: Visibility) => {
-  const icons: Record<Visibility, string> = {
-    [Visibility.PUBLIC]: 'i-lucide-globe',
-    [Visibility.PROTECTED]: 'i-lucide-globe-lock',
-    [Visibility.PRIVATE]: 'i-lucide-lock',
-  };
+	const icons: Record<Visibility, string> = {
+		[Visibility.PUBLIC]: "i-lucide-globe",
+		[Visibility.PROTECTED]: "i-lucide-globe-lock",
+		[Visibility.PRIVATE]: "i-lucide-lock",
+	};
 
-  return icons[visibility];
+	return icons[visibility];
 };
 
 export const getVisibilityDesc = (visibility: Visibility) => {
-  const desc: Record<Visibility, string> = {
-    [Visibility.PUBLIC]: 'All other users can use this set',
-    [Visibility.PROTECTED]: 'Only people with this passcode can use this set',
-    [Visibility.PRIVATE]: 'Only you can view this set',
-  };
+	const desc: Record<Visibility, string> = {
+		[Visibility.PUBLIC]: "All other users can use this set",
+		[Visibility.PROTECTED]: "Only people with this passcode can use this set",
+		[Visibility.PRIVATE]: "Only you can view this set",
+	};
 
-  return desc[visibility];
+	return desc[visibility];
 };
 
 export const getVisibilityLabel = (visibility: Visibility) => {
-  const label: Record<Visibility, string> = {
-    [Visibility.PUBLIC]: 'Everyone',
-    [Visibility.PROTECTED]: 'People with a passcode',
-    [Visibility.PRIVATE]: 'Just me',
-  };
+	const label: Record<Visibility, string> = {
+		[Visibility.PUBLIC]: "Everyone",
+		[Visibility.PROTECTED]: "People with a passcode",
+		[Visibility.PRIVATE]: "Just me",
+	};
 
-  return label[visibility];
+	return label[visibility];
 };
 
 export const getContentSeparator = (
-  value: ContentSeparator,
-  custom: string = '',
+	value: ContentSeparator,
+	custom: string = "",
 ) => {
-  switch (value) {
-    case 'comma':
-      return ',';
-    case 'tab':
-      return '\t';
-    case 'custom':
-      return custom;
-    default:
-      return null;
-  }
+	switch (value) {
+		case "comma":
+			return ",";
+		case "tab":
+			return "\t";
+		case "custom":
+			return custom;
+		default:
+			return null;
+	}
 };
 
-export const getCardSeparator = (value: CardSeparator, custom: string = '') => {
-  switch (value) {
-    case 'new_line':
-      return '\n';
-    case 'semicolon':
-      return ';';
-    case 'custom':
-      return custom;
-    default:
-      return null;
-  }
+export const getCardSeparator = (value: CardSeparator, custom: string = "") => {
+	switch (value) {
+		case "new_line":
+			return "\n";
+		case "semicolon":
+			return ";";
+		case "custom":
+			return custom;
+		default:
+			return null;
+	}
 };
 
 export const getCardStatus = (reviewDate?: string | null): CardStatus => {
-  const now = Date.now();
+	const now = Date.now();
 
-  if (!reviewDate) {
-    return 'new';
-  } else if (Date.parse(reviewDate) > now) {
-    return 'known';
-  } else {
-    return 'learning';
-  }
+	if (!reviewDate) {
+		return "new";
+	} else if (Date.parse(reviewDate) > now) {
+		return "known";
+	} else {
+		return "learning";
+	}
 };
 
 export const getCards = (cards: Card[], isIgnoreDate: boolean): Card[] => {
-  return isIgnoreDate
-    ? structuredClone(cards)
-    : cards.filter(
-        (c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
-      );
+	return isIgnoreDate
+		? structuredClone(cards)
+		: cards.filter(
+				(c) => !c.reviewDate || Date.parse(c.reviewDate) < Date.now(),
+			);
 };
 
 export const shuffleArray = <T>(array: T[]) => {
-  const arr = [...array];
+	const arr = [...array];
 
-  for (let i = arr.length - 1; i > 0; i--) {
-    const random = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[random]] = [arr[random]!, arr[i]!];
-  }
+	for (let i = arr.length - 1; i > 0; i--) {
+		const random = Math.floor(Math.random() * (i + 1));
+		[arr[i], arr[random]] = [arr[random]!, arr[i]!];
+	}
 
-  return arr;
+	return arr;
 };
 
 export const updateCard = <T extends Card | LearnQuestion>(
-  q: T,
-  isCorrect: boolean,
+	q: T,
+	isCorrect: boolean,
 ) => {
-  const { streak, reviewDate, ...rest } = q;
-  const now = new Date();
+	const { streak, reviewDate, ...rest } = q;
+	const now = new Date();
 
-  if (!isCorrect) {
-    return {
-      ...rest,
-      streak: 0,
-      reviewDate: now.toISOString(),
-    };
-  }
+	if (!isCorrect) {
+		return {
+			...rest,
+			streak: 0,
+			reviewDate: now.toISOString(),
+		};
+	}
 
-  const newStreak = streak + 1;
+	const newStreak = streak + 1;
 
-  const gap = Math.pow(2, newStreak - 1);
+	const gap = 2 ** (newStreak - 1);
 
-  const baseDate = reviewDate ? new Date(reviewDate) : now;
+	const baseDate = reviewDate ? new Date(reviewDate) : now;
 
-  const nextDate = addDays(baseDate, gap);
+	const nextDate = addDays(baseDate, gap);
 
-  const maxDate = addDays(now, 30);
+	const maxDate = addDays(now, 30);
 
-  const finalDate = isAfter(nextDate, maxDate) ? maxDate : nextDate;
+	const finalDate = isAfter(nextDate, maxDate) ? maxDate : nextDate;
 
-  return {
-    ...rest,
-    streak: newStreak,
-    reviewDate: finalDate.toISOString(),
-  };
+	return {
+		...rest,
+		streak: newStreak,
+		reviewDate: finalDate.toISOString(),
+	};
 };

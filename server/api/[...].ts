@@ -1,9 +1,9 @@
-import { defineEventHandler, proxyRequest } from 'h3';
-import { joinURL } from 'ufo';
+import { defineEventHandler, proxyRequest } from "h3";
+import { joinURL } from "ufo";
 
 export default defineEventHandler(async (event) => {
-  const config = useRuntimeConfig();
-  const target = joinURL(config.apiUrl, event.path);
+	const config = useRuntimeConfig();
+	const target = joinURL(config.apiUrl, event.path);
 
-  return await proxyRequest(event, target);
+	return await proxyRequest(event, target);
 });

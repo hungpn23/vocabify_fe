@@ -1,231 +1,232 @@
 <script lang="ts" setup>
-import type { FormErrorEvent, FormSubmitEvent } from '@nuxt/ui';
+import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
+import type { UTextarea } from "#components";
 import {
-  createDeckSchema,
-  importCardsSchema,
-  type CreateCardSchema,
-  type CreateDeckSchema,
-  type ImportCardsSchema,
-} from './schemas';
-
+	type CreateCardSchema,
+	type CreateDeckSchema,
+	createDeckSchema,
+	type ImportCardsSchema,
+	importCardsSchema,
+} from "./schemas";
 import {
-  visibilityItems,
-  contentSeparatorItems,
-  cardSeparatorItems,
-  termLanguageItems,
-  definitionLanguageItems,
-} from './select-items';
-import type { UTextarea } from '#components';
+	cardSeparatorItems,
+	contentSeparatorItems,
+	definitionLanguageItems,
+	termLanguageItems,
+	visibilityItems,
+} from "./select-items";
 
 const NEW_CARD: CreateCardSchema = {
-  term: '',
-  definition: '',
-  termLanguage: 'en',
-  definitionLanguage: 'vi',
-  examples: [''],
+	term: "",
+	definition: "",
+	termLanguage: "en",
+	definitionLanguage: "vi",
+	examples: [""],
 };
 
 const router = useRouter();
 const toast = useToast();
 const { token } = useAuth();
 
-const passcodeRef = useTemplateRef('passcode');
-const definitionRef = useTemplateRef('definition');
+const passcodeRef = useTemplateRef("passcode");
+const definitionRef = useTemplateRef("definition");
 
 const isVisibilityModalOpen = ref(false);
 const isImportModalOpen = ref(false);
 const isSubmitting = ref(false);
-const formErrorMsg = ref('');
+const formErrorMsg = ref("");
 
 const suggestion = reactive<CardSuggestion>({
-  currentCardIndex: -1,
-  definition: '',
-  examples: [],
+	currentCardIndex: -1,
+	definition: "",
+	examples: [],
 });
 
 const createState = reactive<CreateDeckSchema>({
-  name: '',
-  description: '',
-  visibility: Visibility.PUBLIC,
-  cards: [{ ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }],
+	name: "",
+	description: "",
+	visibility: Visibility.PUBLIC,
+	cards: [{ ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }, { ...NEW_CARD }],
 });
 
 const importState = reactive({
-  input: '',
-  contentSeparator: 'tab' as ContentSeparator,
-  cardSeparator: 'new_line' as CardSeparator,
-  customContentSeparator: '-',
-  customCardSeparator: '\\',
+	input: "",
+	contentSeparator: "tab" as ContentSeparator,
+	cardSeparator: "new_line" as CardSeparator,
+	customContentSeparator: "-",
+	customCardSeparator: "\\",
 });
 
 const contentSeparatorPreview = computed(
-  () =>
-    `Term${getContentSeparator(
-      importState.contentSeparator,
-      importState.customContentSeparator,
-    )}Definition`,
+	() =>
+		`Term${getContentSeparator(
+			importState.contentSeparator,
+			importState.customContentSeparator,
+		)}Definition`,
 );
 
 const cardSeparatorPreview = computed(
-  () =>
-    `Card1${getCardSeparator(
-      importState.cardSeparator,
-      importState.customCardSeparator,
-    )}Card2`,
+	() =>
+		`Card1${getCardSeparator(
+			importState.cardSeparator,
+			importState.customCardSeparator,
+		)}Card2`,
 );
 
 const parsedCards = computed(() => {
-  const sep = getContentSeparator(
-    importState.contentSeparator,
-    importState.customContentSeparator,
-  );
-  const cardSep = getCardSeparator(
-    importState.cardSeparator,
-    importState.customCardSeparator,
-  );
+	const sep = getContentSeparator(
+		importState.contentSeparator,
+		importState.customContentSeparator,
+	);
+	const cardSep = getCardSeparator(
+		importState.cardSeparator,
+		importState.customCardSeparator,
+	);
 
-  if (!importState.input || !sep || !cardSep) return [];
+	if (!importState.input || !sep || !cardSep) return [];
 
-  const cards = importState.input
-    .split(cardSep)
-    .filter((card) => card.trim().length > 0);
+	const cards = importState.input
+		.split(cardSep)
+		.filter((card) => card.trim().length > 0);
 
-  return cards.map((card) => {
-    const [term = '', definition = ''] = card.split(sep);
+	return cards.map((card) => {
+		const [term = "", definition = ""] = card.split(sep);
 
-    return { term, definition };
-  });
+		return { term, definition };
+	});
 });
 
 const debouncedGetCardSuggestion = useDebounceFn(
-  async (card: CreateCardSchema, cardIndex: number) => {
-    const { term, termLanguage, definitionLanguage } = card;
+	async (card: CreateCardSchema, cardIndex: number) => {
+		const { term, termLanguage, definitionLanguage } = card;
 
-    $fetch<CardSuggestion>('/api/suggestion/card', {
-      method: 'POST',
-      headers: { Authorization: token.value || '' },
-      body: { term, termLanguage, definitionLanguage },
-    })
-      .then((res) => {
-        suggestion.currentCardIndex = cardIndex;
-        suggestion.definition = res.definition;
-        suggestion.pronunciation = res.pronunciation || '';
-        suggestion.partOfSpeech = res.partOfSpeech || '';
-        suggestion.usageOrGrammar = res.usageOrGrammar || '';
-        suggestion.examples = res.examples.length ? res.examples : [''];
-      })
-      .catch(() => {});
-  },
-  500,
+		$fetch<CardSuggestion>("/api/suggestion/card", {
+			method: "POST",
+			headers: { Authorization: token.value || "" },
+			body: { term, termLanguage, definitionLanguage },
+		})
+			.then((res) => {
+				suggestion.currentCardIndex = cardIndex;
+				suggestion.definition = res.definition;
+				suggestion.pronunciation = res.pronunciation || "";
+				suggestion.partOfSpeech = res.partOfSpeech || "";
+				suggestion.usageOrGrammar = res.usageOrGrammar || "";
+				suggestion.examples = res.examples.length ? res.examples : [""];
+			})
+			.catch(() => {});
+	},
+	500,
 );
 
 function isSuggestingThisCard(index: number) {
-  return suggestion.currentCardIndex === index;
+	return suggestion.currentCardIndex === index;
 }
 
 function hasSuggestion(card: CreateCardSchema) {
-  return !card.definition && !!suggestion.definition;
+	return !card.definition && !!suggestion.definition;
 }
 
 function applySuggestion(card: CreateCardSchema, index: number) {
-  if (!hasSuggestion(card)) return;
+	if (!hasSuggestion(card)) return;
 
-  card.definition = suggestion.definition;
-  card.partOfSpeech = suggestion.partOfSpeech;
-  card.pronunciation = suggestion.pronunciation;
-  card.examples = suggestion.examples.length ? suggestion.examples : [''];
+	card.definition = suggestion.definition;
+	card.partOfSpeech = suggestion.partOfSpeech;
+	card.pronunciation = suggestion.pronunciation;
+	card.examples = suggestion.examples.length ? suggestion.examples : [""];
 
-  definitionRef.value![index]?.textareaRef.focus();
+	definitionRef.value?.[index]?.textareaRef.focus();
 }
 
 function onPasscodeInputMounted() {
-  setTimeout(() => {
-    passcodeRef.value?.inputRef?.focus();
-  }, 300);
+	setTimeout(() => {
+		passcodeRef.value?.inputRef?.focus();
+	}, 300);
 }
 
 function isWord(term: string) {
-  return !term.trim().includes(' ');
+	return !term.trim().includes(" ");
 }
 
 async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
-  formErrorMsg.value = '';
-  if (isSubmitting.value) return;
-  isSubmitting.value = true;
+	formErrorMsg.value = "";
+	if (isSubmitting.value) return;
+	isSubmitting.value = true;
 
-  $fetch<CreateDeckRes>('/api/decks', {
-    method: 'POST',
-    headers: { Authorization: token.value || '' },
-    body: event.data,
-  })
-    .then(() => {
-      router.push('/library');
+	$fetch<CreateDeckRes>("/api/decks", {
+		method: "POST",
+		headers: { Authorization: token.value || "" },
+		body: event.data,
+	})
+		.then(() => {
+			router.push("/library");
 
-      toast.add({
-        title: 'New deck created!',
-        color: 'success',
-        duration: 2000,
-      });
-    })
-    .catch((error: ErrorResponse) => {
-      console.log(`🚀 ~ onCreate ~ error.data:`, error.data);
-      toast.add({
-        title: 'Create failed!',
-        description: JSON.stringify(error.data || 'Unknown error'),
-        color: 'error',
-        duration: 2000,
-      });
-    })
-    .finally(() => (isSubmitting.value = false));
+			toast.add({
+				title: "New deck created!",
+				color: "success",
+				duration: 2000,
+			});
+		})
+		.catch((error: ErrorResponse) => {
+			console.log(`🚀 ~ onCreate ~ error.data:`, error.data);
+			toast.add({
+				title: "Create failed!",
+				description: JSON.stringify(error.data || "Unknown error"),
+				color: "error",
+				duration: 2000,
+			});
+		})
+		.finally(() => {
+			isSubmitting.value = false;
+		});
 }
 
 async function onImportSubmit(event: FormSubmitEvent<ImportCardsSchema>) {
-  const sep = getContentSeparator(
-    importState.contentSeparator,
-    importState.customContentSeparator,
-  );
+	const sep = getContentSeparator(
+		importState.contentSeparator,
+		importState.customContentSeparator,
+	);
 
-  const cardSep = getCardSeparator(
-    importState.cardSeparator,
-    importState.customCardSeparator,
-  );
+	const cardSep = getCardSeparator(
+		importState.cardSeparator,
+		importState.customCardSeparator,
+	);
 
-  if (!sep || !cardSep) return;
+	if (!sep || !cardSep) return;
 
-  const importCards = event.data.input
-    .split(cardSep)
-    .filter((card) => card.trim().length > 0)
-    .map((card) => {
-      const [term = '', definition = ''] = card.split(sep);
+	const importCards = event.data.input
+		.split(cardSep)
+		.filter((card) => card.trim().length > 0)
+		.map((card) => {
+			const [term = "", definition = ""] = card.split(sep);
 
-      const newCard: CreateCardSchema = {
-        term,
-        definition,
-        termLanguage: 'en',
-        definitionLanguage: 'vi',
-        examples: [],
-      };
+			const newCard: CreateCardSchema = {
+				term,
+				definition,
+				termLanguage: "en",
+				definitionLanguage: "vi",
+				examples: [],
+			};
 
-      return newCard;
-    });
+			return newCard;
+		});
 
-  const currentCards = createState.cards.filter(
-    (c) => c.term.trim().length > 0 || c.definition.trim().length > 0,
-  );
+	const currentCards = createState.cards.filter(
+		(c) => c.term.trim().length > 0 || c.definition.trim().length > 0,
+	);
 
-  createState.cards = [...currentCards, ...importCards];
+	createState.cards = [...currentCards, ...importCards];
 
-  isImportModalOpen.value = false;
+	isImportModalOpen.value = false;
 
-  toast.add({ title: 'Successfully imported!', color: 'success' });
+	toast.add({ title: "Successfully imported!", color: "success" });
 }
 
 async function onError(event: FormErrorEvent) {
-  const cardError = event.errors.find((e) => e.name === 'input');
+	const cardError = event.errors.find((e) => e.name === "input");
 
-  formErrorMsg.value = cardError
-    ? cardError.message
-    : 'Please fill in all required fields.';
+	formErrorMsg.value = cardError
+		? cardError.message
+		: "Please fill in all required fields.";
 }
 </script>
 

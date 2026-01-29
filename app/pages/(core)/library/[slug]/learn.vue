@@ -1,301 +1,305 @@
 <script setup lang="ts">
-import { breakpointsTailwind } from '@vueuse/core';
+import { breakpointsTailwind } from "@vueuse/core";
 
 const { token } = useAuth();
 const toast = useToast();
 const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
+const smAndLarger = breakpoints.greaterOrEqual("sm");
 const store = useDeckStore();
 
 const throttledSubmitAnswer = useThrottleFn(submitAnswer, 500);
 const throttledNextAnswer = useThrottleFn(nextAnswer, 500);
 
-const inputElement = useTemplateRef('input');
+const inputElement = useTemplateRef("input");
 
 const isSettingOpen = ref(false);
 
 const session = reactive<LearnSession>({
-  currentQuestion: undefined,
-  cardsToSave: [],
-  studyQueue: [],
-  retryQueue: [],
-  totalQuestions: 0,
-  correctCount: 0,
-  incorrectCount: 0,
-  isSavingAnswers: false,
+	currentQuestion: undefined,
+	cardsToSave: [],
+	studyQueue: [],
+	retryQueue: [],
+	totalQuestions: 0,
+	correctCount: 0,
+	incorrectCount: 0,
+	isSavingAnswers: false,
 });
 
 const state = reactive<LearnQuestionState>({
-  userAnswer: '',
-  userChoiceIndex: -1,
-  isInReview: false,
-  isCorrect: undefined,
-  hintUsedCount: 0,
+	userAnswer: "",
+	userChoiceIndex: -1,
+	isInReview: false,
+	isCorrect: undefined,
+	hintUsedCount: 0,
 });
 
 const setting = reactive<LearnSetting>({
-  showCorrectAnswer: true,
-  types: ['written', 'multiple_choices'],
-  direction: 'term_to_def',
+	showCorrectAnswer: true,
+	types: ["written", "multiple_choices"],
+	direction: "term_to_def",
 });
-let snapshotSetting = '';
+let snapshotSetting = "";
 
 const isIncorrect = computed(() => state.isCorrect === false);
 
 const progress = computed(() => {
-  if (!session.totalQuestions) return 0;
-  return (session.correctCount / session.totalQuestions) * 100;
+	if (!session.totalQuestions) return 0;
+	return (session.correctCount / session.totalQuestions) * 100;
 });
 
 watch(
-  () => store.deck?.cards,
-  (newCards) => {
-    if (newCards && newCards.length > 0) {
-      isSettingOpen.value = false;
-      resetQuestionState();
+	() => store.deck?.cards,
+	(newCards) => {
+		if (newCards && newCards.length > 0) {
+			isSettingOpen.value = false;
+			resetQuestionState();
 
-      session.isSavingAnswers = false;
-      session.correctCount = 0;
-      session.incorrectCount = 0;
-      session.cardsToSave = [];
-      session.retryQueue = [];
+			session.isSavingAnswers = false;
+			session.correctCount = 0;
+			session.incorrectCount = 0;
+			session.cardsToSave = [];
+			session.retryQueue = [];
 
-      session.studyQueue = generateQuestions<LearnQuestion>({
-        cards: getCards(newCards, store.isIgnoreDate),
-        types: setting.types,
-        dir: setting.direction,
-        answerPool: newCards,
-      });
-      session.totalQuestions = session.studyQueue.length;
-      session.currentQuestion = session.studyQueue.shift();
-    }
-  },
+			session.studyQueue = generateQuestions<LearnQuestion>({
+				cards: getCards(newCards, store.isIgnoreDate),
+				types: setting.types,
+				dir: setting.direction,
+				answerPool: newCards,
+			});
+			session.totalQuestions = session.studyQueue.length;
+			session.currentQuestion = session.studyQueue.shift();
+		}
+	},
 );
 
 watchDeep(
-  () => setting.types,
-  (newTypes) => {
-    if (!newTypes.length) setting.types = ['multiple_choices'];
-  },
+	() => setting.types,
+	(newTypes) => {
+		if (!newTypes.length) setting.types = ["multiple_choices"];
+	},
 );
 
 watchDebounced(() => session.cardsToSave, saveAnswers, {
-  debounce: 1000,
-  deep: true,
+	debounce: 1000,
+	deep: true,
 });
 
 function submitAnswer(userAnswer: number | string) {
-  const q = session.currentQuestion;
-  if (!q || state.isInReview) return;
+	const q = session.currentQuestion;
+	if (!q || state.isInReview) return;
 
-  if (q.type === 'multiple_choices' && typeof userAnswer === 'number') {
-    state.userChoiceIndex = userAnswer;
-    state.isCorrect = userAnswer === q.correctChoiceIndex;
-  } else if (q.type === 'written' && typeof userAnswer === 'string') {
-    const inputRef = inputElement.value?.inputRef;
-    if (inputRef) inputRef.blur();
+	if (q.type === "multiple_choices" && typeof userAnswer === "number") {
+		state.userChoiceIndex = userAnswer;
+		state.isCorrect = userAnswer === q.correctChoiceIndex;
+	} else if (q.type === "written" && typeof userAnswer === "string") {
+		const inputRef = inputElement.value?.inputRef;
+		if (inputRef) inputRef.blur();
 
-    state.isCorrect =
-      userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
-  } else {
-    return;
-  }
+		state.isCorrect =
+			userAnswer.trim().toLowerCase() === q.correctAnswer.trim().toLowerCase();
+	} else {
+		return;
+	}
 
-  state.isInReview = true;
+	state.isInReview = true;
 
-  if (state.isCorrect) {
-    session.correctCount++;
+	if (state.isCorrect) {
+		session.correctCount++;
 
-    setTimeout(() => {
-      throttledNextAnswer(true, q);
-    }, 500);
-  } else {
-    session.incorrectCount++;
+		setTimeout(() => {
+			throttledNextAnswer(true, q);
+		}, 500);
+	} else {
+		session.incorrectCount++;
 
-    if (setting.showCorrectAnswer) return;
+		if (setting.showCorrectAnswer) return;
 
-    throttledNextAnswer(false, q);
-  }
+		throttledNextAnswer(false, q);
+	}
 }
 
 function nextAnswer(isCorrect?: boolean, q?: LearnQuestion) {
-  if (!q || isCorrect === undefined) return;
+	if (!q || isCorrect === undefined) return;
 
-  session.isSavingAnswers = true;
+	session.isSavingAnswers = true;
 
-  const updated = updateCard(q, isCorrect);
+	const updated = updateCard(q, isCorrect);
 
-  if (isIncorrect.value) session.retryQueue.push(updated);
+	if (isIncorrect.value) session.retryQueue.push(updated);
 
-  // trigger saveAnswers in watchDebounced
-  const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
-  if (index !== -1) {
-    session.cardsToSave[index] = updated;
-  } else {
-    session.cardsToSave.push(updated);
-  }
+	// trigger saveAnswers in watchDebounced
+	const index = session.cardsToSave.findIndex((a) => a.id === updated.id);
+	if (index !== -1) {
+		session.cardsToSave[index] = updated;
+	} else {
+		session.cardsToSave.push(updated);
+	}
 
-  if (!session.studyQueue.length) {
-    if (!session.retryQueue.length) {
-      resetQuestionState();
-      session.currentQuestion = undefined;
-    }
+	if (!session.studyQueue.length) {
+		if (!session.retryQueue.length) {
+			resetQuestionState();
+			session.currentQuestion = undefined;
+		}
 
-    session.studyQueue = session.retryQueue;
-    session.retryQueue = [];
-  }
+		session.studyQueue = session.retryQueue;
+		session.retryQueue = [];
+	}
 
-  resetQuestionState();
-  session.currentQuestion = session.studyQueue.shift();
+	resetQuestionState();
+	session.currentQuestion = session.studyQueue.shift();
 }
 
 function resetQuestionState() {
-  state.isCorrect = undefined;
-  state.isInReview = false;
-  state.userAnswer = '';
-  state.userChoiceIndex = -1;
-  state.hintUsedCount = 0;
+	state.isCorrect = undefined;
+	state.isInReview = false;
+	state.userAnswer = "";
+	state.userChoiceIndex = -1;
+	state.hintUsedCount = 0;
 
-  const inputRef = inputElement.value?.inputRef;
-  if (inputRef) {
-    setTimeout(() => {
-      inputRef.focus();
-    }, 300);
-  }
+	const inputRef = inputElement.value?.inputRef;
+	if (inputRef) {
+		setTimeout(() => {
+			inputRef.focus();
+		}, 300);
+	}
 }
 
 async function saveAnswers() {
-  const answersToSave = [...session.cardsToSave];
-  if (answersToSave.length === 0) return;
+	const answersToSave = [...session.cardsToSave];
+	if (answersToSave.length === 0) return;
 
-  $fetch(`/api/study/save-answer/${store.deckId}`, {
-    method: 'POST',
-    headers: { Authorization: token.value || '' },
-    body: { answers: answersToSave },
-  })
-    .then(() => (session.cardsToSave = []))
-    .catch((error: ErrorResponse) =>
-      toast.add({
-        title: 'Save answers fail!',
-        description: error.data?.message || 'Please try again later.',
-        color: 'error',
-      }),
-    )
-    .finally(() => (session.isSavingAnswers = false));
+	$fetch(`/api/study/save-answer/${store.deckId}`, {
+		method: "POST",
+		headers: { Authorization: token.value || "" },
+		body: { answers: answersToSave },
+	})
+		.then(() => {
+			session.cardsToSave = [];
+		})
+		.catch((error: ErrorResponse) =>
+			toast.add({
+				title: "Save answers fail!",
+				description: error.data?.message || "Please try again later.",
+				color: "error",
+			}),
+		)
+		.finally(() => {
+			session.isSavingAnswers = false;
+		});
 }
 
 async function onSettingClosed() {
-  if (JSON.stringify(setting) === snapshotSetting) return;
+	if (JSON.stringify(setting) === snapshotSetting) return;
 
-  snapshotSetting = '';
-  await store.refetch();
+	snapshotSetting = "";
+	await store.refetch();
 }
 
 // TODO: calculate next review date based on hint used count
 function onGetAHint() {
-  if (session.currentQuestion) {
-    state.userAnswer = session.currentQuestion.correctAnswer.substring(
-      0,
-      state.hintUsedCount + 1,
-    );
+	if (session.currentQuestion) {
+		state.userAnswer = session.currentQuestion.correctAnswer.substring(
+			0,
+			state.hintUsedCount + 1,
+		);
 
-    state.hintUsedCount++;
-  }
+		state.hintUsedCount++;
+	}
 
-  inputElement.value?.inputRef?.focus();
+	inputElement.value?.inputRef?.focus();
 }
 
 function handleChoiceShortcut(index: number) {
-  if (
-    isIncorrect.value &&
-    state.isInReview &&
-    session.currentQuestion?.correctChoiceIndex === index
-  ) {
-    throttledNextAnswer(state.isCorrect, session.currentQuestion);
-  } else {
-    throttledSubmitAnswer(index);
-  }
+	if (
+		isIncorrect.value &&
+		state.isInReview &&
+		session.currentQuestion?.correctChoiceIndex === index
+	) {
+		throttledNextAnswer(state.isCorrect, session.currentQuestion);
+	} else {
+		throttledSubmitAnswer(index);
+	}
 }
 
 function getChoiceBtnClass(cIndex: number) {
-  if (!session.currentQuestion) return '';
+	if (!session.currentQuestion) return "";
 
-  const isThisSelected = state.userChoiceIndex === cIndex;
-  const isThisChoiceCorrect =
-    session.currentQuestion.correctChoiceIndex === cIndex;
+	const isThisSelected = state.userChoiceIndex === cIndex;
+	const isThisChoiceCorrect =
+		session.currentQuestion.correctChoiceIndex === cIndex;
 
-  const successClass =
-    'border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102';
+	const successClass =
+		"border-success bg-success/10 text-success hover:text-success hover:border-success hover:bg-success/10 hover:scale-102";
 
-  if (state.isInReview) {
-    if (isThisSelected) {
-      if (isThisChoiceCorrect) {
-        return successClass;
-      }
+	if (state.isInReview) {
+		if (isThisSelected) {
+			if (isThisChoiceCorrect) {
+				return successClass;
+			}
 
-      return 'border-error bg-error/10 text-error';
-    }
+			return "border-error bg-error/10 text-error";
+		}
 
-    if (isThisChoiceCorrect) {
-      return successClass + ' border-dashed';
-    }
+		if (isThisChoiceCorrect) {
+			return `${successClass} border-dashed`;
+		}
 
-    return 'opacity-70';
-  }
+		return "opacity-70";
+	}
 }
 
 function getWrittenInputClass() {
-  if (!state.isInReview) return '';
+	if (!state.isInReview) return "";
 
-  if (state.isCorrect) {
-    return 'border-success';
-  }
+	if (state.isCorrect) {
+		return "border-success";
+	}
 
-  return 'border-error';
+	return "border-error";
 }
 
 function getChoiceDisabledState(cIndex: number) {
-  if (!state.isInReview) return false;
+	if (!state.isInReview) return false;
 
-  const q = session.currentQuestion;
-  if (!q) return true;
+	const q = session.currentQuestion;
+	if (!q) return true;
 
-  const isThisSelected = state.userChoiceIndex === cIndex;
-  const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
+	const isThisSelected = state.userChoiceIndex === cIndex;
+	const isThisChoiceCorrect = q.correctChoiceIndex === cIndex;
 
-  if (isThisSelected) {
-    return true;
-  }
+	if (isThisSelected) {
+		return true;
+	}
 
-  if (isThisChoiceCorrect) {
-    return false;
-  }
+	if (isThisChoiceCorrect) {
+		return false;
+	}
 
-  return true;
+	return true;
 }
 
 function handleSkip() {
-  if (!session.currentQuestion) return;
+	if (!session.currentQuestion) return;
 
-  throttledSubmitAnswer(
-    session.currentQuestion.type === 'multiple_choices' ? -1 : '',
-  );
+	throttledSubmitAnswer(
+		session.currentQuestion.type === "multiple_choices" ? -1 : "",
+	);
 }
 
 defineShortcuts({
-  ' ': () => throttledNextAnswer(state.isCorrect, session.currentQuestion),
-  '1': () => handleChoiceShortcut(0),
-  '2': () => handleChoiceShortcut(1),
-  '3': () => handleChoiceShortcut(2),
-  '4': () => handleChoiceShortcut(3),
-  'meta_shift_/': {
-    handler: () => onGetAHint(),
-    usingInput: true,
-  },
-  meta_shift_x: {
-    handler: () => handleSkip(),
-    usingInput: true,
-  },
+	" ": () => throttledNextAnswer(state.isCorrect, session.currentQuestion),
+	"1": () => handleChoiceShortcut(0),
+	"2": () => handleChoiceShortcut(1),
+	"3": () => handleChoiceShortcut(2),
+	"4": () => handleChoiceShortcut(3),
+	"meta_shift_/": {
+		handler: () => onGetAHint(),
+		usingInput: true,
+	},
+	meta_shift_x: {
+		handler: () => handleSkip(),
+		usingInput: true,
+	},
 });
 </script>
 

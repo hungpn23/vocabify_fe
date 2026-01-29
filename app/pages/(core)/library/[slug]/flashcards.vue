@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { DropdownMenuItem } from '@nuxt/ui';
-import { breakpointsTailwind } from '@vueuse/core';
+import type { DropdownMenuItem } from "@nuxt/ui";
+import { breakpointsTailwind } from "@vueuse/core";
 
 const breakpoints = useBreakpoints(breakpointsTailwind);
-const smAndLarger = breakpoints.greaterOrEqual('sm');
+const smAndLarger = breakpoints.greaterOrEqual("sm");
 const store = useDeckStore();
 
 const { session, progress, handleAnswer, shuffleCards } = useFlashcardSession();
@@ -14,38 +14,40 @@ const throttledHandleAnswer = useThrottleFn(handleAnswer, 300);
 const isFlipped = ref(false);
 
 const settingOptions = computed<DropdownMenuItem[]>(() => [
-  [
-    {
-      label: 'Restart progress',
-      icon: 'i-lucide-refresh-cw',
-      color: 'warning',
-      onSelect: store.restartDeck,
-    },
-    {
-      label: 'Ignore review dates',
-      icon: `i-lucide-calendar${store.isIgnoreDate ? '-off' : ''}`,
-      type: 'checkbox',
-      checked: store.isIgnoreDate,
-      onUpdateChecked: (checked: boolean) => store.updateIgnoreDate(checked),
-      onSelect: (e: Event) => e.preventDefault(),
-    },
-  ],
+	[
+		{
+			label: "Restart progress",
+			icon: "i-lucide-refresh-cw",
+			color: "warning",
+			onSelect: store.restartDeck,
+		},
+		{
+			label: "Ignore review dates",
+			icon: `i-lucide-calendar${store.isIgnoreDate ? "-off" : ""}`,
+			type: "checkbox",
+			checked: store.isIgnoreDate,
+			onUpdateChecked: (checked: boolean) => store.updateIgnoreDate(checked),
+			onSelect: (e: Event) => e.preventDefault(),
+		},
+	],
 ]);
 
 watch(
-  () => session.currentCard,
-  () => (isFlipped.value = false),
+	() => session.currentCard,
+	() => {
+		isFlipped.value = false;
+	},
 );
 
 function toggleFlip() {
-  if (!session.currentCard) return;
-  isFlipped.value = !isFlipped.value;
+	if (!session.currentCard) return;
+	isFlipped.value = !isFlipped.value;
 }
 
 defineShortcuts({
-  ' ': throttledToggleFlip,
-  arrowright: () => throttledHandleAnswer(true),
-  arrowleft: () => throttledHandleAnswer(false),
+	" ": throttledToggleFlip,
+	arrowright: () => throttledHandleAnswer(true),
+	arrowleft: () => throttledHandleAnswer(false),
 });
 </script>
 
