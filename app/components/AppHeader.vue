@@ -71,7 +71,7 @@ defineShortcuts({
   <UHeader toggle-side="left">
     <template #left>
       <NuxtLink to="/">
-        <AppLogo class="h-6 w-auto shrink-0" />
+        <h1 class="text-2xl font-bold">Vocabify</h1>
       </NuxtLink>
     </template>
 

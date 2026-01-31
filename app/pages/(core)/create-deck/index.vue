@@ -98,12 +98,17 @@ const parsedCards = computed(() => {
 
 const debouncedGetCardSuggestion = useDebounceFn(
 	async (card: CreateCardSchema, cardIndex: number) => {
-		const { term, termLanguage, definitionLanguage } = card;
+		const { term, partOfSpeech, termLanguage, definitionLanguage } = card;
 
 		$fetch<CardSuggestion>("/api/suggestion/card", {
 			method: "POST",
 			headers: { Authorization: token.value || "" },
-			body: { term, termLanguage, definitionLanguage },
+			body: {
+				term,
+				partOfSpeech,
+				termLanguage,
+				definitionLanguage,
+			},
 		})
 			.then((res) => {
 				suggestion.currentCardIndex = cardIndex;
@@ -167,7 +172,6 @@ async function onCreateSubmit(event: FormSubmitEvent<CreateDeckSchema>) {
 			});
 		})
 		.catch((error: ErrorResponse) => {
-			console.log(`🚀 ~ onCreate ~ error.data:`, error.data);
 			toast.add({
 				title: "Create failed!",
 				description: JSON.stringify(error.data || "Unknown error"),
