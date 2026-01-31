@@ -21,33 +21,42 @@ const config = useRuntimeConfig();
 const providers = [
 	{
 		label: "Google",
-		class: "cursor-pointer",
 		icon: "i-simple-icons-google",
 		onClick: onGoogleLogin,
 	},
 	{
 		label: "Github",
-		class: "cursor-pointer",
 		icon: "i-simple-icons-github",
 		onClick: () => {
 			toast.add({ title: "GitHub", description: "Login with GitHub" });
 		},
 	},
+	{
+		label: "Magic Link",
+		icon: "i-simple-icons-simplelogin",
+		onClick: () => {
+			toast.add({ title: "Magic Link", description: "Login with Magic Link" });
+		},
+	},
 ];
 
 function onGoogleLogin() {
+	const scope = [
+		"https://www.googleapis.com/auth/userinfo.email",
+		"https://www.googleapis.com/auth/userinfo.profile",
+	].join(" ");
+
 	const options: GoogleQueryParams = {
 		redirect_uri: config.public.googleRedirectUri,
 		client_id: config.public.googleClientId,
 		response_type: "code",
-		scope:
-			"https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile",
+		scope,
 		prompt: "select_account",
 	};
 
-	const searchParams = new URLSearchParams(options);
+	const searchParams = new URLSearchParams(options).toString();
 
-	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams.toString()}`;
+	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams}`;
 }
 
 function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
@@ -62,18 +71,19 @@ function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
     :fields="logInFields"
     :schema="logInSchema"
     :providers="providers"
-    title="Better Quizlet"
+    title="Vocabify"
+    separator="or using credentials"
     @submit.prevent="onSubmit"
   >
     <template #password-hint>
-      <ULink to="/" class="text-primary font-medium" tabindex="-1"
-        >Forgot password?</ULink
-      >
+      <ULink to="/" class="text-primary font-medium" tabindex="-1">
+        Forgot password?
+      </ULink>
     </template>
 
-    <template #footer>
+    <template #description>
       Don't have an account?
-      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>.
+      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>
     </template>
   </UAuthForm>
 </template>

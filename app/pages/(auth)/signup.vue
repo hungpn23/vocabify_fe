@@ -17,26 +17,9 @@ useSeoMeta({
 const toast = useToast();
 const { signUp } = useAuth();
 
-const providers = [
-	{
-		label: "Google",
-		icon: "i-simple-icons-google",
-		onClick: () => {
-			toast.add({ title: "Google", description: "Login with Google" });
-		},
-	},
-	{
-		label: "GitHub",
-		icon: "i-simple-icons-github",
-		onClick: () => {
-			toast.add({ title: "GitHub", description: "Login with GitHub" });
-		},
-	},
-];
-
 function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
 	signUp(payload.data, { callbackUrl: "/library" }).catch(() =>
-		toast.add({ title: "Login failed" }),
+		toast.add({ title: "Sign up failed" }),
 	);
 }
 </script>
@@ -45,14 +28,13 @@ function onSubmit(payload: FormSubmitEvent<SignUpSchema>) {
   <UAuthForm
     :fields="signUpFields"
     :schema="signUpSchema"
-    :providers="providers"
-    :submit="{ label: 'Create account' }"
-    title="Create an account"
+    :submit="{ label: 'Sign Up' }"
+    title="Welcome!"
     @submit="onSubmit"
   >
-    <template #footer>
+    <template #description>
       Already have an account?
-      <ULink to="/login" class="text-primary font-medium">Login</ULink>.
+      <ULink to="/login" class="text-primary font-medium">Login</ULink>
     </template>
   </UAuthForm>
 </template>

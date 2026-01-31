@@ -37,7 +37,7 @@ const features = [
             Master any subject, one success at a time.
           </h1>
           <p class="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
-            Join the community of students and teachers who use Better Quizlet
+            Join the community of students and teachers who use Vocabify
             to study efficiently. Create your own flashcards or search from
             millions of existing decks.
           </p>

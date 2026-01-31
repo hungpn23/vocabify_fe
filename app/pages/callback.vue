@@ -15,16 +15,16 @@ const { getSession } = useAuth();
 
 const loading = ref(false);
 
-const code = computed(() => route.query.code as string);
+const token = computed(() => route.query.token as string);
 
 onMounted(async () => {
 	loading.value = true;
 
-	if (!code.value) return router.push("/login");
+	if (!token.value) return router.push("/login");
 
-	$fetch<TokenPair>("/api/auth/google/exchange", {
+	$fetch<TokenPair>("/api/auth/verify-token", {
 		method: "POST",
-		body: { code: code.value },
+		query: { token: token.value },
 	})
 		.then(async (res) => {
 			setToken(res.accessToken);
