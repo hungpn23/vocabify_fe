@@ -100,7 +100,7 @@ const debouncedGetCardSuggestion = useDebounceFn(
 	async (card: CreateCardSchema, cardIndex: number) => {
 		const { term, partOfSpeech, termLanguage, definitionLanguage } = card;
 
-		$fetch<CardSuggestion>("/api/suggestion/card", {
+		$fetch<CardSuggestion>("/api/suggestion/term", {
 			method: "POST",
 			headers: { Authorization: token.value || "" },
 			body: {
