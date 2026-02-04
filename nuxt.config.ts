@@ -3,7 +3,6 @@ export default defineNuxtConfig({
 	runtimeConfig: {
 		apiUrl: "",
 		public: {
-			appUrl: "",
 			googleClientId: "",
 			googleRedirectUri: "",
 		},
