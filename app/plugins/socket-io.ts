@@ -13,10 +13,11 @@ declare module "vue" {
 }
 
 export default defineNuxtPlugin(() => {
+	const config = useRuntimeConfig();
 	const { token } = useAuth();
 
 	if (token.value) {
-		const socket = io("http://localhost:3001/notifications", {
+		const socket = io(`${config.apiUrl}/notifications`, {
 			extraHeaders: { Authorization: token.value || "" },
 			withCredentials: true,
 		});
