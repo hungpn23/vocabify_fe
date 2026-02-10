@@ -39,13 +39,18 @@ function onSubmit(payload: FormSubmitEvent<MagicLinkSchema>) {
   >
     <template #description>
       Don't have an account?
-      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>
+      <ULink to="/sign-up" class="text-primary font-medium">Sign up</ULink>
     </template>
   </UAuthForm>
 
-  <UContainer v-else>
-    <h1>
-      Your magic link has been sent to your email
-    </h1>
+  <UContainer v-else class="sm:px-0 lg:px-0 px-0">
+    <div class="flex place-items-center place-content-between gap-4">
+      <UIcon name="i-lucide-circle-check-big" class="text-success size-10" />
+
+      <div class="flex flex-col gap-2">
+        <h1 class="font-medium">We've sent a login link to your email.</h1>
+        <p class="text-sm text-muted-foreground">You can safely close this page.</p>
+      </div>
+    </div>
   </UContainer>
 </template>

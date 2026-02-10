@@ -81,7 +81,7 @@ function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
 
     <template #description>
       Don't have an account?
-      <ULink to="/signup" class="text-primary font-medium">Sign up</ULink>
+      <ULink to="/sign-up" class="text-primary font-medium">Sign up</ULink>
     </template>
   </UAuthForm>
 </template>

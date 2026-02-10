@@ -94,7 +94,7 @@ defineShortcuts({
           color="neutral"
           trailing-icon="i-lucide-arrow-right"
           class="hidden lg:inline-flex"
-          to="/signup"
+          to="/sign-up"
         />
       </div>
 
@@ -153,7 +153,7 @@ defineShortcuts({
           block
           class="mb-3"
         />
-        <UButton label="Sign up" color="neutral" to="/signup" block />
+        <UButton label="Sign up" color="neutral" to="/sign-up" block />
       </div>
     </template>
   </UHeader>

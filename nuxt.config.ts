@@ -30,6 +30,7 @@ export default defineNuxtConfig({
 		globalAppMiddleware: true,
 		provider: {
 			type: "local",
+			endpoints: { signUp: { path: "/register" } },
 			token: {
 				signInResponseTokenPointer: "/accessToken",
 				maxAgeInSeconds: 1800, // 30 minutes

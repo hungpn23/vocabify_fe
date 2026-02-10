@@ -43,7 +43,7 @@ const features = [
           </p>
           <div class="mt-10 flex items-center justify-center gap-x-6">
             <UButton
-              to="/signup"
+              to="/sign-up"
               size="xl"
               icon="i-lucide-arrow-right"
               trailing

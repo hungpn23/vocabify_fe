@@ -109,7 +109,7 @@ vocabify_fe/
 │   └── api/              # Server API routes (proxy)
 ├── shared/
 │   └── types/            # TypeScript types
-│       ├── auth.ts       # Login/signup schemas
+│       ├── auth.ts       # Login/sign-up schemas
 │       ├── card.ts       # Card, FlashcardSession, LearnSession
 │       ├── deck.ts       # Deck, DeckStats
 │       ├── user.ts       # User types
