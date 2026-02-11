@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
+import * as v from "valibot";
+import { baseAuthSchema } from "~/features/auth/schemas";
+import { applyProviderHandlers, pickFields } from "~/features/auth/utils";
 
 definePageMeta({
 	layout: "auth",
@@ -14,32 +17,19 @@ useSeoMeta({
 	description: "Login to your account to continue",
 });
 
+const schema = v.pick(baseAuthSchema, ["email", "password"]);
+
+const providerWithHandlers = applyProviderHandlers({
+	google: handleLoginWithGoogle,
+	"magic-link": handleLoginWithMagicLink,
+});
+
 const router = useRouter();
 const toast = useToast();
 const { signIn } = useAuth();
 const config = useRuntimeConfig();
 
-const providers = [
-	{
-		label: "Google",
-		icon: "i-simple-icons-google",
-		onClick: onGoogleLogin,
-	},
-	{
-		label: "Github",
-		icon: "i-simple-icons-github",
-		onClick: () => {
-			toast.add({ title: "GitHub", description: "Login with GitHub" });
-		},
-	},
-	{
-		label: "Magic Link",
-		icon: "i-simple-icons-simplelogin",
-		onClick: () => router.push("/magic-link"),
-	},
-];
-
-function onGoogleLogin() {
+function handleLoginWithGoogle() {
 	const scope = [
 		"https://www.googleapis.com/auth/userinfo.email",
 		"https://www.googleapis.com/auth/userinfo.profile",
@@ -58,19 +48,27 @@ function onGoogleLogin() {
 	window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${searchParams}`;
 }
 
-function onSubmit(payload: FormSubmitEvent<LogInSchema>) {
+function handleLoginWithMagicLink() {
+	router.push("/magic-link");
+}
+
+function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
 	signIn(payload.data, { callbackUrl: "/library" }).catch(() => {
-		toast.add({ title: "Login failed" });
+		toast.add({
+			title: "Login failed",
+			description: "Please check your credentials and try again.",
+			color: "error",
+		});
 	});
 }
 </script>
 
 <template>
   <UAuthForm
-    :fields="logInFields"
-    :schema="logInSchema"
-    :providers="providers"
-    title="Vocabify"
+    :fields="pickFields(['email', 'password'])"
+    :schema="schema"
+    :providers="providerWithHandlers"
+    title="Sign in to Vocabify"
     @submit.prevent="onSubmit"
   >
     <template #password-hint>

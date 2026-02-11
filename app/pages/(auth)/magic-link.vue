@@ -1,5 +1,10 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
+import * as v from "valibot";
+import { baseAuthSchema } from "~/features/auth/schemas";
+import { pickFields } from "~/features/auth/utils";
+import { api } from "~/shared/apis";
+import { ERROR_MESSAGES } from "~/shared/constants";
 
 definePageMeta({
 	layout: "auth",
@@ -9,32 +14,47 @@ definePageMeta({
 	},
 });
 
-useSeoMeta({
-	title: "Login with Magic Link",
-});
+useSeoMeta({ title: "Login with Magic Link" });
+
+const schema = v.pick(baseAuthSchema, ["email"]);
 
 const toast = useToast();
 
 const requestSent = ref(false);
 
-function onSubmit(payload: FormSubmitEvent<MagicLinkSchema>) {
-	$fetch(`/api/auth/magic-link`, {
-		method: "POST",
-		body: { email: payload.data.email },
-	})
-		.catch(() => toast.add({ title: "Login failed", color: "error" }))
-		.finally(() => {
-			requestSent.value = true;
+async function onSubmit(
+	payload: FormSubmitEvent<v.InferOutput<typeof schema>>,
+) {
+	const response = await api.auth.sendMagicLink({ email: payload.data.email });
+
+	requestSent.value = true;
+
+	if (response.error.value) {
+		toast.add({
+			title: "Failed to login with email",
+			description: response.error.value.data?.message || ERROR_MESSAGES.UNKNOWN,
+			color: "error",
 		});
+		return;
+	}
+
+	if (response.data.value?.success) {
+		toast.add({
+			title: "We've sent you a login link!",
+			description: "Please check your email for the login link.",
+			color: "success",
+		});
+		return;
+	}
 }
 </script>
 
 <template>
   <UAuthForm
     v-if="!requestSent"
-    :fields="magicLinkFields"
-    :schema="magicLinkSchema"
-    title="Vocabify"
+    :fields="pickFields(['email'])"
+    :schema="schema"
+    title="Sign in with Email"
     @submit="onSubmit"
   >
     <template #description>
