@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { AUTH_SCHEMA } from "~/features/auth/constants";
-import { pickFields } from "~/features/auth/utils";
+import { AUTH_SCHEMA, pickFields } from "~/features/auth";
 
 definePageMeta({
 	layout: "auth",
@@ -10,11 +9,6 @@ definePageMeta({
 		unauthenticatedOnly: true,
 		navigateAuthenticatedTo: "/library",
 	},
-});
-
-useSeoMeta({
-	title: "Sign up",
-	description: "Create an account to get started",
 });
 
 const schema = v.pipe(
@@ -28,12 +22,12 @@ const schema = v.pipe(
 		["confirmPassword"],
 	),
 );
-
 const toast = useToast();
-const { signUp } = useAuth();
+const auth = useAuth();
 
 function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
-	signUp(payload.data, { callbackUrl: "/library" })
+	auth
+		.signUp(payload.data, { callbackUrl: "/library" })
 		.then(() => {
 			toast.add({
 				title: "Sign up successful",

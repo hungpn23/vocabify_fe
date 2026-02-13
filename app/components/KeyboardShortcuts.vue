@@ -28,99 +28,101 @@ const isShortcutOpen = ref(false);
     />
 
     <template #title>
-      <span class="text-lg font-medium sm:text-xl">Keyboard shortcuts</span>
+      <span class="text-lg font-medium">Keyboard shortcuts</span>
     </template>
 
     <template #body>
       <div class="flex flex-col gap-2">
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Toggle color mode</div>
+          <span class="text-sm">Toggle color mode</span>
 
-          <div class="flex place-items-center">
-            <AppKbd label="`" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg">`</UKbd>
           </div>
         </div>
 
-        <USeparator label="Flashcard" />
+        <USeparator  label="Flashcard Mode" />
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Flip card</div>
+          <span class="text-sm">Flip card</span>
 
-          <div class="flex place-items-center">
-            <AppKbd label="Space" />
-          </div>
-        </div>
-
-        <div class="flex place-content-between place-items-center gap-2">
-          <div>Skip/Next card</div>
-
-          <div class="flex place-items-center">
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
-            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
-          </div>
-        </div>
-
-        <USeparator label="Learning" />
-
-        <div class="flex place-content-between place-items-center gap-2">
-          <div>Choose an answer</div>
-
-          <div class="flex place-items-center">
-            <AppKbd label="1" />,<AppKbd label="2" />,
-            <AppKbd label="3" />,<AppKbd label="4" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg">space</UKbd>
           </div>
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Get a hint</div>
+          <span class="text-sm">Skip/Next card</span>
 
-          <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-            <AppKbd label="Shift" />
-            <AppKbd label="/" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-move-left" /></UKbd>/
+            <UKbd size="lg"><UIcon name="i-lucide-move-right" /></UKbd>
+          </div>
+        </div>
+
+        <USeparator label="Learning Mode" />
+
+        <div class="flex place-content-between place-items-center gap-2">
+          <span class="text-sm">Choose an answer</span>
+
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg">1</UKbd>/
+            <UKbd size="lg">2</UKbd>/
+            <UKbd size="lg">3</UKbd>/
+            <UKbd size="lg">4</UKbd>
           </div>
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Skip</div>
+          <span class="text-sm">Get a hint</span>
 
-          <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-            <AppKbd label="Shift" />
-            <AppKbd label="X" />
-          </div>
-        </div>
-
-        <USeparator label="Test" />
-
-        <div class="flex place-content-between place-items-center gap-2">
-          <div>Previous/Next question</div>
-
-          <div class="flex place-items-center">
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
-            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-command" /></UKbd>
+            <UKbd size="lg">Shift</UKbd>
+            <UKbd size="lg">/</UKbd>
           </div>
         </div>
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Mark as don't know</div>
+          <span class="text-sm">Skip</span>
 
-          <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-            <AppKbd label="Shift" />
-            <AppKbd label="X" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-command" /></UKbd>
+            <UKbd size="lg">Shift</UKbd>
+            <UKbd size="lg">X</UKbd>
+          </div>
+        </div>
+
+        <USeparator label="Test Mode" />
+
+        <div class="flex place-content-between place-items-center gap-2">
+          <span class="text-sm">Previous/Next question</span>
+
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-move-left" /></UKbd>/
+            <UKbd size="lg"><UIcon name="i-lucide-move-right" /></UKbd>
+          </div>
+        </div>
+
+        <div class="flex place-content-between place-items-center gap-2">
+          <span class="text-sm">Mark as don't know</span>
+
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-command" /></UKbd>
+            <UKbd size="lg">Shift</UKbd>
+            <UKbd size="lg">X</UKbd>
           </div>
         </div>
 
         <USeparator label="Routing" />
 
         <div class="flex place-content-between place-items-center gap-2">
-          <div>Go back/forward</div>
+          <span class="text-sm">Go back/forward</span>
 
-          <div class="place-items center flex">
-            <AppKbd :icon="{ name: 'i-lucide-command', size: 4 }" />
-            <AppKbd :icon="{ name: 'i-lucide-move-left' }" />,
-            <AppKbd :icon="{ name: 'i-lucide-move-right' }" />
+          <div class="flex place-items-center gap-1">
+            <UKbd size="lg"><UIcon name="i-lucide-command" /></UKbd>
+            <UKbd size="lg"><UIcon name="i-lucide-move-left" /></UKbd>/
+            <UKbd size="lg"><UIcon name="i-lucide-move-right" /></UKbd>
           </div>
         </div>
       </div>

@@ -1,3 +1,4 @@
-export type MagicLinkBody = {
-	email: string;
+export type TokenPairResponse = {
+	accessToken: string;
+	refreshToken: string;
 };

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { breakpointsTailwind } from "@vueuse/core";
+import type { ErrorResponse } from "~/shared/types";
 
 const { token } = useAuth();
 const toast = useToast();
@@ -526,13 +527,15 @@ defineShortcuts({
           class="place-self-center font-semibold"
         >
           Press
-          <AppKbd label="Space" />
+          <UKbd size="lg">Space</UKbd>
 
           or
-          <AppKbd
+          <UKbd
             v-if="session.currentQuestion.correctChoiceIndex > -1"
-            :label="session.currentQuestion.correctChoiceIndex + 1"
-          />
+            size="lg"
+          >
+            {{ session.currentQuestion.correctChoiceIndex + 1 }}
+          </UKbd>
           to continue.
         </div>
 

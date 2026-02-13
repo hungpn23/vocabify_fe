@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import type { ToasterProps } from "@nuxt/ui";
+
+const toaster: ToasterProps = {
+	duration: 3000,
+	position: "top-right",
+	expand: false,
+};
+
 const colorMode = useColorMode();
 
 const color = computed(() =>
@@ -18,7 +26,7 @@ useHead({
 </script>
 
 <template>
-  <UApp>
+  <UApp :toaster="toaster">
     <NuxtLoadingIndicator />
 
     <NuxtLayout>

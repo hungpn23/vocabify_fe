@@ -9,3 +9,5 @@ class Api {
 }
 
 export const api = new Api();
+export * from "./auth.api";
+export * from "./auth.type";

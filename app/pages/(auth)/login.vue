@@ -1,8 +1,13 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from "@nuxt/ui";
 import * as v from "valibot";
-import { AUTH_SCHEMA } from "~/features/auth/constants";
-import { applyProviderHandlers, pickFields } from "~/features/auth/utils";
+import {
+	AUTH_SCHEMA,
+	applyProviderHandlers,
+	type GoogleQueryParams,
+	pickFields,
+	useAuthToasts,
+} from "~/features/auth";
 
 definePageMeta({
 	layout: "auth",
@@ -11,15 +16,16 @@ definePageMeta({
 		navigateAuthenticatedTo: "/library",
 	},
 });
-useSeoMeta({ title: "Login to Vocabify" });
 
 const schema = v.pick(AUTH_SCHEMA, ["email", "password"]);
 const providerWithHandlers = applyProviderHandlers({
 	google: handleLoginWithGoogle,
 	"magic-link": handleLoginWithMagicLink,
 });
-
-const { googleRedirectUri, googleClientId } = useRuntimeConfig().public;
+const config = useRuntimeConfig();
+const router = useRouter();
+const auth = useAuth();
+const toast = useAuthToasts();
 
 function handleLoginWithGoogle() {
 	const scope = [
@@ -28,8 +34,8 @@ function handleLoginWithGoogle() {
 	].join(" ");
 
 	const options: GoogleQueryParams = {
-		redirect_uri: googleRedirectUri,
-		client_id: googleClientId,
+		redirect_uri: config.public.googleRedirectUri,
+		client_id: config.public.googleClientId,
 		response_type: "code",
 		scope,
 		prompt: "select_account",
@@ -41,19 +47,17 @@ function handleLoginWithGoogle() {
 }
 
 function handleLoginWithMagicLink() {
-	useRouter().push("/magic-link");
+	router.push("/magic-link");
 }
 
-function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
-	useAuth()
+function handleSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
+	auth
 		.signIn(payload.data, { callbackUrl: "/library" })
-		.catch(() => {
-			useToast().add({
-				title: "Login failed",
-				description: "Please check your credentials and try again.",
-				color: "error",
-			});
-		});
+		.then(async () => {
+			const session = await auth.getSession();
+			toast.loginSuccess(session?.username);
+		})
+		.catch(toast.loginFailed);
 }
 </script>
 
@@ -63,7 +67,7 @@ function onSubmit(payload: FormSubmitEvent<v.InferOutput<typeof schema>>) {
     :schema="schema"
     :providers="providerWithHandlers"
     title="Sign in to Vocabify"
-    @submit.prevent="onSubmit"
+    @submit.prevent="handleSubmit"
   >
     <template #password-hint>
       <ULink to="/" class="text-primary font-medium" tabindex="-1">

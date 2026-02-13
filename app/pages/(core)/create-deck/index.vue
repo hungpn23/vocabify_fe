@@ -1,6 +1,7 @@
 <script lang="ts" setup>
 import type { FormErrorEvent, FormSubmitEvent } from "@nuxt/ui";
 import type { UTextarea } from "#components";
+import type { ErrorResponse } from "~/shared/types";
 import {
 	type CreateCardSchema,
 	type CreateDeckSchema,
@@ -410,7 +411,7 @@ async function onError(event: FormErrorEvent) {
                   v-if="isSuggestingThisCard(cIndex) && hasSuggestion(card)"
                   class="text-muted text-sm"
                 >
-                  Press <AppKbd label="Tab" /> to accept suggestion.
+                  Press <UKbd size="lg">tab</UKbd> to accept suggestion.
                 </span>
               </div>
 
@@ -480,7 +481,7 @@ async function onError(event: FormErrorEvent) {
             </div>
 
             <UButton
-              class="mt-2 flex place-self-end"
+              class="flex place-self-end"
               label="Remove"
               icon="i-lucide-trash-2"
               color="error"
